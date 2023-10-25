@@ -45,6 +45,27 @@ def create_clients_table():
     conn.commit()
     conn.close()
 
+def create_equipment_table():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS equipment (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            equipment_number TEXT,
+            client_id INTEGER,
+            equipment_type TEXT,
+            equipment_sub_type TEXT,
+            serial_number TEXT,
+            client_asset_id TEXT,
+            sub_location TEXT,
+            safe_working_load REAL,
+            inspection_frequency TEXT,
+            year_of_manufacture INTEGER
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+
 def get_client_details(account_number):
     conn = get_db()
     cursor = conn.cursor()
@@ -52,6 +73,40 @@ def get_client_details(account_number):
     client_details = cursor.fetchone()
     conn.close()
     return dict(client_details) if client_details else None
+
+def get_equipment_list():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM equipment')
+    equipment_list = cursor.fetchall()
+    conn.close()
+    return equipment_list
+
+def generate_equipment_number():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT MAX(equipment_number) FROM equipment')
+    last_equipment_number = cursor.fetchone()[0]
+
+    if last_equipment_number is not None:
+        # Extract the numeric part of the last equipment number
+        numeric_part = int(last_equipment_number[3:])  # Assuming the format is 'EQP000'
+        new_numeric_part = numeric_part + 1
+        new_equipment_number = f'EQP{str(new_numeric_part).zfill(3)}'
+    else:
+        # If no equipment numbers exist, start with 'EQP000'
+        new_equipment_number = 'EQP000'
+
+    conn.close()
+    return new_equipment_number
+
+def get_all_clients():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, client_name FROM clients')
+    clients = cursor.fetchall()
+    conn.close()
+    return clients
 
 @app.route('/', methods=['GET'])
 def root():
@@ -166,6 +221,97 @@ def update_client():
 
     return redirect('/clients')
 
+# Function to fetch equipment data
+def get_equipment_list():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT equipment.*, clients.client_name
+        FROM equipment
+        INNER JOIN clients ON equipment.client_id = clients.id
+    ''')
+    equipment = cursor.fetchall()
+    conn.close()
+    return equipment
+
+
+def get_client_list():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, client_name FROM clients')
+    clients = cursor.fetchall()
+    conn.close()
+    return clients
+
+# Function to insert equipment data
+def insert_equipment(equipment_number, client_id, equipment_type, equipment_sub_type, serial_number, client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO equipment (equipment_number, client_id, equipment_type, equipment_sub_type, '
+                   'serial_number, client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture) '
+                   'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                   (equipment_number, client_id, equipment_type, equipment_sub_type, serial_number, client_asset_id, sub_location,
+                    safe_working_load, inspection_frequency, year_of_manufacture))
+    conn.commit()
+    cursor.close()
+
+
+@app.route('/equipment')
+def equipment():
+    # Fetch the equipment data from the database and pass it to the template
+    equipment = get_equipment_list()  # Implement this function to fetch equipment data
+    clients = get_all_clients()  # Implement this function to fetch the list of clients
+
+    # Pagination parameters
+    page = request.args.get('page', 1, type=int)
+    search_query = request.args.get('search', '', type=str)
+    items_per_page = 25  # Number of items to show per page
+
+    # Filter equipment data based on search query
+    if search_query:
+        equipment = [item for item in equipment if search_query.lower() in str(item).lower()]
+
+    total_items = len(equipment)
+    total_pages = (total_items + items_per_page - 1) // items_per_page
+
+    # Paginate the equipment list
+    start_index = (page - 1) * items_per_page
+    end_index = start_index + items_per_page
+    equipment_page = equipment[start_index:end_index]
+
+    return render_template(
+        'equipment.html',
+        equipment=equipment_page,
+        clients=clients,
+        total_pages=total_pages,
+        current_page=page,
+        search_query=search_query
+    )
+
+@app.route('/equipment/create', methods=['POST'])
+def create_equipment():
+    if request.method == 'POST':
+        # Generate a new equipment number
+        equipment_number = generate_equipment_number()
+        client_id = request.form['client_id']
+        equipment_type = request.form['equipment_type']
+        equipment_sub_type = request.form['equipment_sub_type']
+        serial_number = request.form['serial_number']
+        client_asset_id = request.form['client_asset_id']  # Fetch client_asset_id from the form
+        sub_location = request.form['sub_location']
+        safe_working_load = request.form['safe_working_load']
+        inspection_frequency = request.form['inspection_frequency']
+        year_of_manufacture = request.form['year_of_manufacture']
+
+        # Insert the equipment data into the database
+        insert_equipment(equipment_number, client_id, equipment_type, equipment_sub_type, serial_number,
+                         client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture)
+
+        # Redirect back to the equipment page (you can also return a success message)
+        return redirect('/equipment')
+
+
+create_equipment_table()
 create_clients_table()
 
 if __name__ == "__main__":
