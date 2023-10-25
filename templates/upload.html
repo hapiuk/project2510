@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+<head>
+<title>ISI - Tools</title>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+<script>
+  function submitForm(event) {
+    event.preventDefault();
+
+    // Reset the status text and progress bar
+    document.getElementById("status").innerHTML = "";
+    document.getElementById("progress-bar").value = 0;
+
+    const form = document.getElementById('upload-form');
+    const formData = new FormData(form);
+    const files = form.querySelector('input[type="file"]').files;
+    const numFiles = files.length;
+    const uploadDelay = 10 * numFiles; // 100 milliseconds per file
+
+    // Function to update the progress bar
+    const updateProgressBar = (progress) => {
+      document.getElementById("progress-bar").value = progress;
+    };
+
+    // Start uploading files
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/upload');
+    xhr.upload.addEventListener('progress', function (e) {
+      if (e.lengthComputable) {
+        // Set the progress bar value directly based on the upload progress
+        const uploadProgress = (e.loaded / e.total) * 100;
+        updateProgressBar(uploadProgress);
+      }
+    });
+
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        // Upload completed, start updating the progress bar gradually
+        let progress = 0;
+        intervalId = setInterval(() => {
+          progress += 100 / numFiles;
+          updateProgressBar(progress);
+          if (progress >= 100) {
+            clearInterval(intervalId);
+            // All files uploaded, start processing
+            const businessEntity = document.getElementById('business_entity').value;
+            if (businessEntity) {
+              fetch(`/process?business_entity=${encodeURIComponent(businessEntity)}`, {
+                method: 'POST'
+              })
+                .then(() => {
+                  alert('Files uploaded and processing completed.');
+                  // Reset the status text and progress bar after the alert
+                  document.getElementById("status").innerHTML = "";
+                  document.getElementById("progress-bar").value = 0;
+
+                  // Download the output files
+                  window.location.href = `/download?business_entity=${encodeURIComponent(businessEntity)}`;
+                })
+                .catch(error => {
+                  alert(error.message);
+                  // Reset the status text and progress bar after the alert
+                  document.getElementById("status").innerHTML = "";
+                  document.getElementById("progress-bar").value = 0;
+                });
+            } else {
+              // Reset the status text and progress bar if the business_entity is missing
+              document.getElementById("status").innerHTML = "";
+              document.getElementById("progress-bar").value = 0;
+              alert('Please provide a business entity.');
+            }
+          }
+        }, uploadDelay);
+      }
+    };
+
+    formData.delete('files[]');
+    for (const file of files) {
+      formData.append('files[]', file);
+    }
+    xhr.send(formData);
+
+    // Add this line to set the status text to "Uploading..."
+    document.getElementById("status").innerHTML = "Please Wait...";
+  }
+</script>
+</head>
+<body>
+<head>
+  <title>ISI - Asset Tracker</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+{% include 'header.html' %}
+  <form id="upload-form" onsubmit="submitForm(event)">
+    <h2>ISI - PDF Data Extraction Tool - AECOM</h2>
+    <br>
+    <input type="file" name="files[]" multiple>
+    <br>
+    <label for="business_entity">Business Entity:</label>
+    <input type="text" id="business_entity" name="business_entity" style="width:99%; margin-bottom: 10px;">
+    <br>
+    <input type="submit" value="Upload and Process">
+    <a href="/" class="dashboard-button" style=" float: right; margin-right:1%;">Back to Dashboard</a>
+    <progress id="progress-bar" style="width:99%;" value="0" max="100"></progress>
+    <div id="status"></div>
+  </form>
+</body>
+</html>

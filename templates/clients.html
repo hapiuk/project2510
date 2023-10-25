@@ -1,0 +1,252 @@
+<!doctype html>
+<html>
+<head>
+<title>Client Tracker</title>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/datatable.css') }}">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='css/datatable.min.js') }}"></script>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Open the Add Client Modal
+        document.getElementById('add-client-button').onclick = function() {
+            document.getElementById('add-client-modal').style.display = 'block';
+
+            // Automatically generate and set the Account Number
+            var clientTable = document.getElementById('clients-table');
+            var clientCount = clientTable.rows.length - 1;
+            var newAccountNumber = 'ACC' + ('00' + (clientCount + 1)).slice(-3);
+            document.getElementById('account_number').value = newAccountNumber;
+        }
+
+        // Close the Add Client Modal
+        document.getElementsByClassName('close')[0].onclick = function() {
+            document.getElementById('add-client-modal').style.display = 'none';
+        }
+
+
+
+        function searchClients() {
+            const searchInput = document.getElementById('search').value;
+            const url = `/clients?search=${searchInput}`;
+            window.location.href = url;
+        }
+
+        function handleSearch(event) {
+            if (event.key === "Enter") {
+                searchClients();
+            }
+        }
+
+        function addClient() {
+            var form = document.getElementById('add-client-form');
+
+            // Perform the form submission using AJAX
+            var formData = new FormData(form);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/save-client', true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // You can handle the response here
+                }
+            };
+            xhr.send(formData);
+        }
+
+
+
+        function getClientDetails(accountNumber, callback) {
+            // Make an AJAX request to the server to fetch client details
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/get-client-details/' + accountNumber, true);
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var clientDetails = JSON.parse(xhr.responseText);
+
+                    if (callback) {
+                        callback(clientDetails); // Pass the client details to the callback function
+                    }
+                }
+            };
+
+            xhr.send();
+        }
+
+        function editClient(accountNumber) {
+            // Call getClientDetails and pass a callback function to handle the result
+            console.log('Edit Client function called');
+            getClientDetails(accountNumber, function(clientDetails) {
+                if (clientDetails) {
+                    // Pre-fill the fields in the edit modal with the client details
+                    document.getElementById('edit-account_number').value = clientDetails.account_number;
+                    document.getElementById('edit-client_name').value = clientDetails.client_name;
+                    // Add other client-related fields
+                    document.getElementById('edit-address_line_1').value = clientDetails.address_line_1;
+                    document.getElementById('edit-address_line_2').value = clientDetails.address_line_2;
+                    document.getElementById('edit-town_city').value = clientDetails.town_city;
+                    document.getElementById('edit-county').value = clientDetails.county;
+                    document.getElementById('edit-postcode').value = clientDetails.postcode;
+                    document.getElementById('edit-phone_number').value = clientDetails.phone_number;
+                    document.getElementById('edit-status').value = clientDetails.status;
+
+                    // Display the edit modal
+                    document.getElementById('edit-client-modal').style.display = 'block';
+                } else {
+                    alert('Client details not found.');
+                }
+            });
+        }
+
+        function closeEditClientModal() {
+            // Close the edit modal
+            document.getElementById('edit-client-modal').style.display = 'none';
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Initialize DataTables with your clients table
+            var dataTable = $('#clients-table').DataTable();
+
+            // Handle search functionality
+            function searchClients() {
+                var searchInput = document.getElementById('search').value;
+                dataTable.search(searchInput).draw();
+            }
+
+            // Handle pagination
+            $('.pagination a').on('click', function(e) {
+                e.preventDefault();
+                var page = $(this).text();
+                dataTable.page(page - 1).draw(false);
+            });
+        });
+
+
+        // Initialize DataTable on your table
+        $('#clients-table').DataTable();
+    });
+</script>
+
+</head>
+<body>
+<header>
+    <div class="logo">
+        <a href="/">Job Reporting Tool</a>
+    </div>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="#">Jobs</a></li>
+                <li><a href="/clients">Clients</a></li>
+                <li><a href="#">Equipment</a></li>
+                <li><a href="#">Contracts</a></li>
+                <li class="dropdown">
+                    <a href="#">Account</a>
+                    <div class="dropdown-content">
+                        <a href="/upload">Settings</a>
+                        <a href="/assettracker">Log Out</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    <div class="search">
+        <button id="add-client-button" onclick="searchClients()">New Client</button>
+    </div>
+</header>
+<!-- Add Client Modal -->
+<div id="add-client-modal" class="modal">
+    <div class="modal-content" style="width: 45%; margin-top: 1%;">
+        <span class="close">&times;</span>
+        <h2>Add New Client</h2>
+        <form action="/save-client" method="post" id="add-client-form">
+            <input type="hidden" name="account_number" id="account_number">
+
+            <label for="client_name">Client Name:</label>
+            <input type="text" name="client_name" id="client_name" required>
+
+            <label for="address_line_1">Address Line 1:</label>
+            <input type="text" name="address_line_1" id="address_line_1" required>
+
+            <label for="address_line_2">Address Line 2:</label>
+            <input type="text" name="address_line_2" id="address_line_2">
+
+            <label for="town_city">Town/City:</label>
+            <input type="text" name="town_city" id="town_city" required>
+
+            <label for="county">County:</label>
+            <input type="text" name="county" id="county" required>
+
+            <label for="postcode">Postcode:</label>
+            <input type="text" name="postcode" id="postcode" required>
+
+            <label for="phone_number">Phone Number:</label>
+            <input type="text" name="phone_number" id="phone_number" required>
+
+            <label for="status">Status:</label>
+            <input type="text" name="status" id="status" required>
+
+            <input type="submit" value="Add Client">
+        </form>
+    </div>
+</div>
+
+<!-- View Clients -->
+<div style="width: 95%; padding-top: 1%; margin: auto;">
+    <table id="clients-table" style="width: 100%; margin-top: 10px;">
+        <thead>
+            <tr>
+                <th sortable="true">Account Number</th>
+                <th sortable="true">Client Name</th>
+                <th sortable="true">Address Line 1</th>
+                <th sortable="true">Address Line 2</th>
+                <th sortable="true">Town/City</th>
+                <th sortable="true">County</th>
+                <th sortable="true">Postcode</th>
+                <th sortable="true">Phone Number</th>
+                <th sortable="true">Status</th>
+            </tr>
+        </thead>
+        <!-- Display clients from the database -->
+        {% for client in clients %}
+            <tr>
+                <td><a href="/client-details/{{ client.account_number }}">{{ client.account_number }}</td>
+                <td>{{ client.client_name }}</a></td>
+                <td>{{ client.address_line_1 }}</td>
+                <td>{{ client.address_line_2 }}</td>
+                <td>{{ client.town_city }}</td>
+                <td>{{ client.county }}</td>
+                <td>{{ client.postcode }}</td>
+                <td>{{ client.phone_number }}</td>
+                <td>{{ client.status }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <!-- Add pagination controls -->
+    <div class="pagination" style="margin: auto;">
+        <ul>
+            {% if current_page > 1 %}
+                <li><a href="{{ url_for('clients', page=current_page-1, search=search_query) }}">&laquo; Previous</a></li>
+            {% else %}
+                <li class="disabled"><span>&laquo; Previous</span></li>
+            {% endif %}
+            
+            {% for page_num in range(1, total_pages + 1) %}
+                <li class="{% if page_num == current_page %}active{% endif %}">
+                    <a href="{{ url_for('clients', page=page_num, search=search_query) }}">{{ page_num }}</a>
+                </li>
+            {% endfor %}
+            
+            {% if current_page < total_pages %}
+                <li><a href="{{ url_for('clients', page=current_page+1, search=search_query) }}">Next &raquo;</a></li>
+            {% else %}
+                <li class="disabled"><span>Next &raquo;</span></li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
+
+</body>
+</html>
