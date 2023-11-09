@@ -1,158 +1,16 @@
-<!doctype html>
-<html>
-<head>
-<title>Client Tracker</title>
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/datatable.css') }}">
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='css/datatable.min.js') }}"></script>
-
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Open the Add Client Modal
-        document.getElementById('add-client-button').onclick = function() {
-            document.getElementById('add-client-modal').style.display = 'block';
-
-            // Automatically generate and set the Account Number
-            var clientTable = document.getElementById('clients-table');
-            var clientCount = clientTable.rows.length - 1;
-            var newAccountNumber = 'ACC' + ('00' + (clientCount + 1)).slice(-3);
-            document.getElementById('account_number').value = newAccountNumber;
-        }
-
-        // Close the Add Client Modal
-        document.getElementsByClassName('close')[0].onclick = function() {
-            document.getElementById('add-client-modal').style.display = 'none';
-        }
-
-
-
-        function searchClients() {
-            const searchInput = document.getElementById('search').value;
-            const url = `/clients?search=${searchInput}`;
-            window.location.href = url;
-        }
-
-        function handleSearch(event) {
-            if (event.key === "Enter") {
-                searchClients();
-            }
-        }
-
-        function addClient() {
-            var form = document.getElementById('add-client-form');
-
-            // Perform the form submission using AJAX
-            var formData = new FormData(form);
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/save-client', true);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    // You can handle the response here
-                }
-            };
-            xhr.send(formData);
-        }
-
-
-
-        function getClientDetails(accountNumber, callback) {
-            // Make an AJAX request to the server to fetch client details
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/get-client-details/' + accountNumber, true);
-
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var clientDetails = JSON.parse(xhr.responseText);
-
-                    if (callback) {
-                        callback(clientDetails); // Pass the client details to the callback function
-                    }
-                }
-            };
-
-            xhr.send();
-        }
-
-        function editClient(accountNumber) {
-            // Call getClientDetails and pass a callback function to handle the result
-            console.log('Edit Client function called');
-            getClientDetails(accountNumber, function(clientDetails) {
-                if (clientDetails) {
-                    // Pre-fill the fields in the edit modal with the client details
-                    document.getElementById('edit-account_number').value = clientDetails.account_number;
-                    document.getElementById('edit-client_name').value = clientDetails.client_name;
-                    // Add other client-related fields
-                    document.getElementById('edit-address_line_1').value = clientDetails.address_line_1;
-                    document.getElementById('edit-address_line_2').value = clientDetails.address_line_2;
-                    document.getElementById('edit-town_city').value = clientDetails.town_city;
-                    document.getElementById('edit-county').value = clientDetails.county;
-                    document.getElementById('edit-postcode').value = clientDetails.postcode;
-                    document.getElementById('edit-phone_number').value = clientDetails.phone_number;
-                    document.getElementById('edit-status').value = clientDetails.status;
-
-                    // Display the edit modal
-                    document.getElementById('edit-client-modal').style.display = 'block';
-                } else {
-                    alert('Client details not found.');
-                }
-            });
-        }
-
-        function closeEditClientModal() {
-            // Close the edit modal
-            document.getElementById('edit-client-modal').style.display = 'none';
-        }
-
-        document.addEventListener("DOMContentLoaded", function() {
-            // Initialize DataTables with your clients table
-            var dataTable = $('#clients-table').DataTable();
-
-            // Handle search functionality
-            function searchClients() {
-                var searchInput = document.getElementById('search').value;
-                dataTable.search(searchInput).draw();
-            }
-
-            // Handle pagination
-            $('.pagination a').on('click', function(e) {
-                e.preventDefault();
-                var page = $(this).text();
-                dataTable.page(page - 1).draw(false);
-            });
-        });
-
-
-        // Initialize DataTable on your table
-        $('#clients-table').DataTable();
-    });
-</script>
-
-</head>
-<body>
-<header>
-
-        <nav>
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="#">Jobs</a></li>
-                <li><a href="/clients">Clients</a></li>
-                <li><a href="/equipment">Equipment</a></li>
-                <li><a href="#">Contracts</a></li>
-                <li class="dropdown">
-                    <a href="#">Account</a>
-                    <div class="dropdown-content">
-                        <a href="/upload">Settings</a>
-                        <a href="/assettracker">Log Out</a>
-                    </div>
-                </li>
-            </ul>
-        </nav>
+<!-- Include the header -->
+{% include 'header.html' %}
     <div class="search">
         <button id="add-client-button" onclick="searchClients()">New Client</button>
     </div>
 </header>
+
+<select id="client_id" style="display: none;">
+    {% for client in clients %}
+    <option value="{{ client.id }}">{{ client.name }}</option>
+    {% endfor %}
+</select>
+
 <!-- Add Client Modal -->
 <div id="add-client-modal" class="modal">
     <div class="modal-content" style="width: 45%; margin-top: 1%;">
@@ -208,8 +66,8 @@
         </thead>
         <!-- Display clients from the database -->
         {% for client in clients %}
-            <tr>
-                <td><a href="/client-details/{{ client.account_number }}">{{ client.account_number }}</td>
+            <tr class="clickable-row" data-href="{{ url_for('client_details', account_number=client.account_number) }}">
+                <td>{{ client.account_number }}</td>
                 <td>{{ client.client_name }}</a></td>
                 <td>{{ client.address_line_1 }}</td>
                 <td>{{ client.address_line_2 }}</td>
@@ -221,30 +79,97 @@
             </tr>
         {% endfor %}
     </table>
-
-    <!-- Add pagination controls -->
-    <div class="pagination" style="margin: auto;">
-        <ul>
-            {% if current_page > 1 %}
-                <li><a href="{{ url_for('clients', page=current_page-1, search=search_query) }}">&laquo; Previous</a></li>
-            {% else %}
-                <li class="disabled"><span>&laquo; Previous</span></li>
-            {% endif %}
-            
-            {% for page_num in range(1, total_pages + 1) %}
-                <li class="{% if page_num == current_page %}active{% endif %}">
-                    <a href="{{ url_for('clients', page=page_num, search=search_query) }}">{{ page_num }}</a>
-                </li>
-            {% endfor %}
-            
-            {% if current_page < total_pages %}
-                <li><a href="{{ url_for('clients', page=current_page+1, search=search_query) }}">Next &raquo;</a></li>
-            {% else %}
-                <li class="disabled"><span>Next &raquo;</span></li>
-            {% endif %}
-        </ul>
-    </div>
 </div>
+<script>
+    // Function to get client details and pre-fill the edit modal
+    function editClient(accountNumber) {
+        // Fetch client details
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/get-client-details/' + accountNumber, true);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                var clientDetails = JSON.parse(xhr.responseText);
+                // Pre-fill the fields in the edit modal with the client details
+                for (var key in clientDetails) {
+                    if (clientDetails.hasOwnProperty(key) && document.getElementById('edit-' + key)) {
+                        document.getElementById('edit-' + key).value = clientDetails[key];
+                    }
+                }
+                // Display the edit modal
+                document.getElementById('edit-client-modal').style.display = 'block';
+            }
+        };
+        xhr.send();
+    }
+    // Function to perform the client search
+    function searchClients() {
+        const searchInput = document.getElementById('search').value;
+        const url = `/clients?search=${searchInput}`;
+        window.location.href = url;
+    }
 
+    document.addEventListener("DOMContentLoaded", function() {
+        // Open the Add Client Modal
+        document.getElementById('add-client-button').addEventListener('click', function() {
+            document.getElementById('add-client-modal').style.display = 'block';
+            // Automatically generate and set the Account Number
+            var clientTable = document.getElementById('clients-table');
+            var clientCount = clientTable.rows.length - 1;
+            var newAccountNumber = 'ACC' + ('000' + (clientCount + 1)).slice(-3);
+            document.getElementById('account_number').value = newAccountNumber;
+        });
+
+        $('#clients-table').DataTable({
+            searching: true, // Enable search bar
+            paging: true,    // Enable pagination
+            // Add other DataTable options as needed
+        });
+
+        $('#clients-table tbody').on('click', '.clickable-row', function() {
+            window.location.href = $(this).data('href');
+        });
+
+        // Close the Add Client Modal
+        document.getElementsByClassName('close')[0].addEventListener('click', function() {
+            document.getElementById('add-client-modal').style.display = 'none';
+        });
+
+        // Add client form submission
+        var addClientForm = document.getElementById('add-client-form');
+        addClientForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            var formData = new FormData(addClientForm);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/save-client', true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // Handle the response here
+                    // Reload the page or part of the page to show the new client
+                }
+            };
+            xhr.send(formData);
+        });
+
+        // Searching functionality
+        document.getElementById('search').addEventListener('keypress', function(event) {
+            if (event.key === "Enter") {
+                searchClients();
+            }
+        });
+
+
+        // Close the edit client modal
+        document.getElementById('close-edit-modal').addEventListener('click', function() {
+            document.getElementById('edit-client-modal').style.display = 'none';
+        });
+
+        // Initialize DataTables on your clients table
+        var dataTable = $('#clients-table').DataTable({
+            // ... You can add any DataTables options here
+        });
+
+    });
+
+</script>
 </body>
 </html>

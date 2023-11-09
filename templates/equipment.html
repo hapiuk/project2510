@@ -1,195 +1,115 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Equipment Tracker</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/datatable.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='css/datatable.min.js') }}"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Open the Add Equipment Modal
-            document.getElementById('add-equipment-button').onclick = function() {
-                document.getElementById('add-equipment-modal').style.display = 'block';
-                // Automatically generate and set the Equipment Number
-                var equipmentTable = document.getElementById('equipment-table');
-                var equipmentCount = equipmentTable.rows.length - 1;
-                var newEquipmentNumber = 'EQP' + ('00' + (equipmentCount + 1)).slice(-3);
-                document.getElementById('equipment_number').value = newEquipmentNumber;
-            }
+<!-- Include the header -->
+{% include 'header.html' %}
+    <div class="search">
+        <button id="add-equipment-button">Upload Equipment</button>
+    </div>
+</header>
 
-            // Close the Add Equipment Modal
-            document.getElementsByClassName('close')[0].onclick = function() {
-                document.getElementById('add-equipment-modal').style.display = 'none';
-            }
+<!-- Add Equipment Modal -->
+<div id="add-equipment-modal" class="modal">
+    <div class="modal-content" style="width: 45%; margin-top: 1%;">
+        <span class="close">&times;</span>
+        <h2>Upload New Equipment</h2>
+        <form action="/upload-equipment" method="post" enctype="multipart/form-data" id="add-equipment-form">
+            <div class="form-group">
+                <label for="csv_file">Upload Equipment CSV File:</label>
+                <input type="file" name="csv_file" id="csv_file" accept=".csv">
+            </div>
+            <div class="equipment-details-navigation">
+                <input type="submit" value="Upload CSV" class="button">
+            </div>
+        </form>
+    </div>
+</div>
 
-            function searchEquipment() {
-                const searchInput = document.getElementById('search').value;
-                const url = `/equipment?search=${searchInput}`;
-                window.location.href = url;
-            }
-
-            function handleSearch(event) {
-                if (event.key === "Enter") {
-                    searchEquipment();
-                }
-            }
-
-            function addEquipment() {
-                var form = document.getElementById('add-equipment-form');
-                // Perform the form submission using AJAX
-                var formData = new FormData(form);
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', '/equipment/create', true);
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4 && xhr.status === 200) {
-                        // You can handle the response here
-                    }
-                };
-                xhr.send(formData);
-            }
-
-            // Initialize DataTable on your table
-            $('#equipment-table').DataTable();
-
-            // Handle search functionality
-            function searchEquipment() {
-                var searchInput = document.getElementById('search').value;
-                dataTable.search(searchInput).draw();
-            }
-
-            // Handle pagination
-            $('.pagination a').on('click', function(e) {
-                e.preventDefault();
-                var page = $(this).text();
-                dataTable.page(page - 1).draw(false);
-            });
+<!-- Equipment Table -->
+<div style="width: 95%; padding-top: 1%; margin: auto;">
+    <table id="equipment-table" style="width: 100%; margin-top: 10px;">
+        <thead>
+            <tr>
+                <th>Asset Number</th>
+                <th>Client</th>
+                <th>Equipment Type</th>
+                <th>Equipment Sub Type</th>
+                <th>Serial Number</th>
+                <th>Client Asset ID</th>
+                <th>Sub Location</th>
+                <th>Safe Working Load</th>
+                <th>Inspection Frequency</th>
+                <th>Year of Manufacture</th>
+            </tr>
+        </thead>
+        <!-- Display equipment from the database -->
+        {% for equip in equipment %}
+            <tr class="clickable-row" data-href="{{ url_for('equipment_details', equipment_number=equip.equipment_number) }}">
+                <td>{{ equip.equipment_number }}</td>
+                <td>{{ equip.client_name }}</td>
+                <td>{{ equip.equipment_type }}</td>
+                <td>{{ equip.equipment_sub_type }}</td>
+                <td>{{ equip.serial_number }}</td>
+                <td>{{ equip.client_asset_id }}</td>
+                <td>{{ equip.sub_location }}</td>
+                <td>{{ equip.safe_working_load }}</td>
+                <td>{{ equip.inspection_frequency }}</td>
+                <td>{{ equip.year_of_manufacture }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Add equipment button event listener
+        document.getElementById('add-equipment-button').addEventListener('click', function() {
+            openAddEquipmentModal();
         });
-    </script>
-</head>
-<body>
-    <header>
-        <nav>
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="#">Jobs</a></li>
-                <li><a href="/clients">Clients</a></li>
-                <li><a href="#">Equipment</a></li>
-                <li><a href="#">Contracts</a></li>
-                <li class="dropdown">
-                    <a href="#">Account</a>
-                    <div class="dropdown-content">
-                        <a href="/upload">Settings</a>
-                        <a href="/assettracker">Log Out</a>
-                    </div>
-                </li>
-            </ul>
-        </nav>
-        <div class="search">
-            <button id="add-equipment-button" onclick="searchEquipment()">New Equipment</button>
-        </div>
-    </header>
+        // Function to handle row clicks and redirect to equipment details page
+        $('#equipment-table tbody').on('click', '.clickable-row', function() {
+            window.location.href = $(this).data('href');
+        });
+        $('#equipment-table').DataTable({
+            searching: true, // Enable search bar
+            paging: true,    // Enable pagination
+            // Add other DataTable options as needed
+        });
 
-    <!-- Add Equipment Modal -->
-    <div id="add-equipment-modal" class="modal">
-        <div class="modal-content" style="width: 45%; margin-top: 1%;">
-            <span class="close">&times;</span>
-            <h2>Add New Equipment</h2>
-            <form action="/equipment/create" method="post" id="add-equipment-form">
-                <input type="hidden" name="equipment_number" id="equipment_number">
+        // Close modal when clicking on the 'x' span
+        document.querySelector('.close').addEventListener('click', function() {
+            closeAddEquipmentModal();
+        });
+    });
 
-                <label for="client_id">Client:</label>
-                <select name="client_id" id="client_id" required>
-                    {% for client in clients %}
-                        <option value="{{ client.id }}">{{ client.client_name }}</option>
-                    {% endfor %}
-                </select>
+    function openAddEquipmentModal() {
+        // Code to display the modal
+        document.getElementById('add-equipment-modal').style.display = 'block';
+    }
 
-                <label for="equipment_type">Equipment Type:</label>
-                <input type="text" name="equipment_type" id="equipment_type" required>
+    function closeAddEquipmentModal() {
+        // Code to hide the modal
+        document.getElementById('add-equipment-modal').style.display = 'none';
+    }
 
-                <label for="equipment_sub_type">Equipment Sub Type:</label>
-                <input type="text" name="equipment_sub_type" id="equipment_sub_type" required>
+    // AJAX submission for adding equipment
+    document.getElementById('add-equipment-form').onsubmit = function(event) {
+        event.preventDefault(); // Prevent form from submitting the default way
 
-                <label for="serial_number">Serial Number:</label>
-                <input type="text" name="serial_number" id="serial_number" required>
+        var formData = new FormData(this);
 
-                <label for="client_asset_id">Client Asset ID:</label>
-                <input type="text" name="client_asset_id" id="client_asset_id" required>
-
-                <label for="sub_location">Sub Location:</label>
-                <input type="text" name="sub_location" id="sub_location" required>
-
-                <label for="safe_working_load">Safe Working Load:</label>
-                <input type="text" name="safe_working_load" id="safe_working_load" required>
-
-                <label for="inspection_frequency">Inspection Frequency:</label>
-                <input type="text" name="inspection_frequency" id="inspection_frequency" required>
-
-                <label for="year_of_manufacture">Year of Manufacture:</label>
-                <input type="text" name="year_of_manufacture" id="year_of_manufacture" required>
-
-                <input type="submit" value="Add Equipment">
-            </form>
-        </div>
-    </div>
-
-    <!-- Equipment Table -->
-    <div style="width: 95%; padding-top: 1%; margin: auto;">
-        <table id="equipment-table" style="width: 100%; margin-top: 10px;">
-            <thead>
-                <tr>
-                    <th>Equipment Number</th>
-                    <th>Client</th>
-                    <th>Equipment Type</th>
-                    <th>Equipment Sub Type</th>
-                    <th>Serial Number</th>
-                    <th>Client Asset ID</th>
-                    <th>Sub Location</th>
-                    <th>Safe Working Load</th>
-                    <th>Inspection Frequency</th>
-                    <th>Year of Manufacture</th>
-                </tr>
-            </thead>
-            <!-- Display equipment from the database -->
-            {% for equip in equipment %}
-                <tr>
-                    <td>{{ equip.equipment_number }}</td>
-                    <td>{{ equip.client_name }}</td>
-                    <td>{{ equip.equipment_type }}</td>
-                    <td>{{ equip.equipment_sub_type }}</td>
-                    <td>{{ equip.serial_number }}</td>
-                    <td>{{ equip.client_asset_id }}</td>
-                    <td>{{ equip.sub_location }}</td>
-                    <td>{{ equip.safe_working_load }}</td>
-                    <td>{{ equip.inspection_frequency }}</td>
-                    <td>{{ equip.year_of_manufacture }}</td>
-                </tr>
-            {% endfor %}
-        </table>
-
-        <!-- Add pagination controls -->
-        <div class="pagination" style="margin: auto;">
-            <ul>
-                {% if current_page > 1 %}
-                    <li><a href="{{ url_for('equipment', page=current_page-1, search=search_query) }}">&laquo; Previous</a></li>
-                {% else %}
-                    <li class="disabled"><span>&laquo; Previous</span></li>
-                {% endif %}
-                
-                {% for page_num in range(1, total_pages + 1) %}
-                    <li class="{% if page_num == current_page %}active{% endif %}">
-                        <a href="{{ url_for('equipment', page=page_num, search=search_query) }}">{{ page_num }}</a>
-                    </li>
-                {% endfor %}
-                
-                {% if current_page < total_pages %}
-                    <li><a href="{{ url_for('equipment', page=current_page+1, search=search_query) }}">Next &raquo;</a></li>
-                {% else %}
-                    <li class="disabled"><span>Next &raquo;</span></li>
-                {% endif %}
-            </ul>
-        </div>
-    </div>
+        fetch('/equipment/create', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Handle response data
+            console.log(data);
+            closeAddEquipmentModal();
+            // Optionally, refresh the DataTable or update it with new data
+        })
+        .catch(error => {
+            // Handle errors
+            console.error('Error:', error);
+        });
+    };
+</script>
 </body>
 </html>

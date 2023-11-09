@@ -3,7 +3,9 @@ import random
 import string
 import subprocess
 import logging
-from flask import Flask, request, flash, render_template, redirect, jsonify, session, send_from_directory
+import csv
+from io import TextIOWrapper
+from flask import Flask, request, flash, render_template, redirect, jsonify, session, send_from_directory, url_for
 from werkzeug.utils import secure_filename
 import io
 import zipfile
@@ -51,7 +53,7 @@ def create_equipment_table():
         CREATE TABLE IF NOT EXISTS equipment (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             equipment_number TEXT,
-            client_id INTEGER,
+            client_account_number TEXT,
             equipment_type TEXT,
             equipment_sub_type TEXT,
             serial_number TEXT,
@@ -64,7 +66,6 @@ def create_equipment_table():
     ''')
     conn.commit()
     conn.close()
-
 
 def get_client_details(account_number):
     conn = get_db()
@@ -89,12 +90,10 @@ def generate_equipment_number():
     last_equipment_number = cursor.fetchone()[0]
 
     if last_equipment_number is not None:
-        # Extract the numeric part of the last equipment number
-        numeric_part = int(last_equipment_number[3:])  # Assuming the format is 'EQP000'
+        numeric_part = int(last_equipment_number[3:])
         new_numeric_part = numeric_part + 1
         new_equipment_number = f'EQP{str(new_numeric_part).zfill(3)}'
     else:
-        # If no equipment numbers exist, start with 'EQP000'
         new_equipment_number = 'EQP000'
 
     conn.close()
@@ -112,6 +111,7 @@ def get_all_clients():
 def root():
     return render_template('index.html')
 
+# Client Functions
 @app.route('/clients')
 def clients():
     page = request.args.get('page', 1, type=int)
@@ -221,6 +221,75 @@ def update_client():
 
     return redirect('/clients')
 
+@app.route('/upload-equipment', methods=['POST'])
+def upload_equipment():
+    if 'csv_file' in request.files:
+        try:
+            # Process the uploaded CSV file
+            equipment_data = process_equipment_csv(request.files['csv_file'])
+            
+            # Insert equipment data into the database
+            insert_equipment_from_csv(equipment_data)
+            
+            flash('CSV file uploaded and equipment details added successfully', 'success')
+        except Exception as e:
+            flash(f'Error processing CSV file: {str(e)}', 'error')
+
+    return redirect('/equipment')
+
+def insert_equipment_from_csv(equipment_data):
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    for equipment in equipment_data:
+        cursor.execute('''
+            INSERT INTO equipment (equipment_number, client_account_number, equipment_type, equipment_sub_type, serial_number)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (equipment['equipment_number'], equipment['client_account_number'], equipment['equipment_type'], equipment['equipment_sub_type'], equipment['serial_number']))
+    
+    conn.commit()
+    conn.close()
+
+def process_equipment_csv(file):
+    equipment_data = []
+
+    csv_file = TextIOWrapper(file, encoding='utf-8')
+    csv_reader = csv.DictReader(csv_file)
+
+    for row in csv_reader:
+        print("CSV Row:", row)
+        # Check if 'client_account_number' is in the CSV row (without the BOM character)
+        if 'client_account_number' not in row:
+            raise ValueError("Missing 'client_account_number' in CSV row")
+
+        # Extract Info (use 'client_account_number' as the column name)
+        client_account_number = row.get('client_account_number', 'Unknown')
+        equipment_number = row.get('equipment_number', 'Unknown')
+        equipment_type = row.get('equipment_type', 'Unknown')
+        equipment_sub_type = row.get('equipment_sub_type', 'Unknown')
+        serial_number = row.get('serial_number', 'Unknown')
+        client_asset_id = row.get('client_asset_id', 'Unknown')
+        sub_location = row.get('sub_location', 'Unknown')
+        safe_working_load = row.get('safe_working_load', 'Unknown')
+        inspection_frequency = row.get('inspection_frequency', 'Unknown')
+        year_of_manufacture = row.get('year_of_manufacture', 'Unknown')
+
+        equipment_data.append({
+            'equipment_number': equipment_number,
+            'client_account_number': client_account_number,
+            'equipment_type': equipment_type,
+            'equipment_sub_type': equipment_sub_type,
+            'serial_number': serial_number,
+            'client_asset_id': client_asset_id,
+            'sub_location': sub_location,
+            'safe_working_load': safe_working_load,
+            'inspection_frequency': inspection_frequency,
+            'year_of_manufacture': year_of_manufacture,
+        })
+
+
+    return equipment_data
+
 # Function to fetch equipment data
 def get_equipment_list():
     conn = get_db()
@@ -228,12 +297,20 @@ def get_equipment_list():
     cursor.execute('''
         SELECT equipment.*, clients.client_name
         FROM equipment
-        INNER JOIN clients ON equipment.client_id = clients.id
+        INNER JOIN clients ON equipment.client_account_number = clients.account_number
     ''')
     equipment = cursor.fetchall()
     conn.close()
     return equipment
 
+# Function to fetch equipment details based on equipment_id
+def get_equipment_details(equipment_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM equipment WHERE id = ?', (equipment_id,))
+    equipment_details = cursor.fetchone()
+    conn.close()
+    return dict(equipment_details) if equipment_details else None
 
 def get_client_list():
     conn = get_db()
@@ -255,26 +332,75 @@ def insert_equipment(equipment_number, client_id, equipment_type, equipment_sub_
     conn.commit()
     cursor.close()
 
+@app.route('/equipment_details/<equipment_number>')
+def equipment_details(equipment_number):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM equipment WHERE equipment_number = ?', (equipment_number,))
+    equipment_details = cursor.fetchone()
+
+    if equipment_details is None:
+        flash('Equipment not found', 'error')
+        return redirect('/equipment')
+
+    # Fetch client name using equipment_details['account_number']
+    cursor.execute('SELECT client_name FROM clients WHERE account_number = ?', (equipment_details['client_account_number'],))
+    client_name = cursor.fetchone()[0]
+
+    conn.close()
+
+    return render_template('equipment_details.html', equipment_details=equipment_details, client_name=client_name)
+
+@app.route('/update-equipment', methods=['POST'])
+def update_equipment():
+    if request.method == 'POST':
+        equipment_number = request.form.get('equipment_number')
+        client_id = request.form.get('client_id')
+        equipment_type = request.form.get('equipment_type')
+        equipment_sub_type = request.form.get('equipment_sub_type')
+        serial_number = request.form.get('serial_number')
+        client_asset_id = request.form.get('client_asset_id')
+        sub_location = request.form.get('sub_location')
+        safe_working_load = request.form.get('safe_working_load')
+        inspection_frequency = request.form.get('inspection_frequency')
+        year_of_manufacture = request.form.get('year_of_manufacture')
+
+        try:
+            conn = get_db()
+            sql_query = '''
+                UPDATE equipment
+                SET equipment_type=?, equipment_sub_type=?, serial_number=?, client_asset_id=?, 
+                sub_location=?, safe_working_load=?, inspection_frequency=?, year_of_manufacture=?
+                WHERE equipment_number=?
+            '''
+            conn.execute(sql_query, (equipment_type, equipment_sub_type, serial_number, client_asset_id, sub_location,
+                safe_working_load, inspection_frequency, year_of_manufacture, equipment_number))
+            conn.commit()
+            conn.close()
+
+            success_message = "Equipment updated successfully."
+            session['success_message'] = success_message
+        except Exception as e:
+            error_message = str(e)
+            session['error_message'] = error_message
+
+    return redirect('/equipment')
 
 @app.route('/equipment')
 def equipment():
-    # Fetch the equipment data from the database and pass it to the template
-    equipment = get_equipment_list()  # Implement this function to fetch equipment data
-    clients = get_all_clients()  # Implement this function to fetch the list of clients
+    equipment = get_equipment_list()
+    clients = get_all_clients()
 
-    # Pagination parameters
     page = request.args.get('page', 1, type=int)
     search_query = request.args.get('search', '', type=str)
-    items_per_page = 25  # Number of items to show per page
+    items_per_page = 25
 
-    # Filter equipment data based on search query
     if search_query:
         equipment = [item for item in equipment if search_query.lower() in str(item).lower()]
 
     total_items = len(equipment)
     total_pages = (total_items + items_per_page - 1) // items_per_page
 
-    # Paginate the equipment list
     start_index = (page - 1) * items_per_page
     end_index = start_index + items_per_page
     equipment_page = equipment[start_index:end_index]
@@ -291,29 +417,64 @@ def equipment():
 @app.route('/equipment/create', methods=['POST'])
 def create_equipment():
     if request.method == 'POST':
-        # Generate a new equipment number
-        equipment_number = generate_equipment_number()
-        client_id = request.form['client_id']
-        equipment_type = request.form['equipment_type']
-        equipment_sub_type = request.form['equipment_sub_type']
-        serial_number = request.form['serial_number']
-        client_asset_id = request.form['client_asset_id']  # Fetch client_asset_id from the form
-        sub_location = request.form['sub_location']
-        safe_working_load = request.form['safe_working_load']
-        inspection_frequency = request.form['inspection_frequency']
-        year_of_manufacture = request.form['year_of_manufacture']
 
-        # Insert the equipment data into the database
-        insert_equipment(equipment_number, client_id, equipment_type, equipment_sub_type, serial_number,
-                         client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture)
+        # Process the uploaded CSV file and obtain equipment data
+        equipment_data = process_equipment_csv(request.files['csv_file'])
 
-        # Redirect back to the equipment page (you can also return a success message)
+        # Insert equipment data into the database, including client_id from CSV
+        for equipment in equipment_data:
+            equipment_number = equipment['equipment_number']
+            client_id = equipment['client_id']
+            equipment_type = equipment['equipment_type']
+            equipment_sub_type = equipment['equipment_sub_type']
+            serial_number = equipment['serial_number']
+            client_asset_id = equipment['client_asset_id']
+            sub_location = equipment['sub_location']
+            safe_working_load = equipment['safe_working_load']
+            inspection_frequency = equipment['inspection_frequency']
+            year_of_manufacture = equipment['year_of_manufacture']
+
+            insert_equipment(equipment_number, client_id, equipment_type, equipment_sub_type, serial_number,
+                             client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture)
+
+
+        response_data = {"message": "Equipment added successfully."}
+        return jsonify(response_data)
         return redirect('/equipment')
 
+
+@app.route('/equipment/search', methods=['GET'])
+def equipment_search():
+    search_query = request.args.get('search', '')
+    equipment = get_equipment_list()
+
+    if search_query:
+        equipment = [item for item in equipment if search_query.lower() in str(item).lower()]
+
+    return jsonify(equipment)
 
 create_equipment_table()
 create_clients_table()
 
 if __name__ == "__main__":
+    import socket
+
+    def is_valid_ip(ip):
+        try:
+            socket.inet_aton(ip)
+            return True
+        except socket.error:
+            return False
+
+    ip_address = None
+    while True:
+        ip_address = input("Enter the IP address to run the app (e.g., 0.0.0.0): ")
+        if is_valid_ip(ip_address):
+            break
+        else:
+            print("Invalid IP address. Please enter a valid IP address.")
+
+    print(f"Running the app at IP address: {ip_address}")
+
     app.secret_key = 'Is1S3cr3tk3y'
-    app.run(host='192.168.1.75', port=5000)
+    app.run(host=ip_address, port=5000)

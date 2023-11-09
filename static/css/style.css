@@ -360,41 +360,6 @@ input[type=submit]:hover {
     color: #fff;
 }
 
-/* Pagination styles */
-.pagination {
-    text-align: center;
-    margin-top: -10px;
-    padding-bottom: 30px;
-}
-
-.pagination ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-.pagination li {
-    display: inline-block;
-    margin: 0 5px;
-}
-
-.pagination a {
-    text-decoration: none;
-    background-color: #007BFF;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 5px;
-}
-
-.pagination .active a {
-    background-color: #333;
-    cursor: default;
-}
-
-.pagination .disabled span {
-    background-color: #ccc;
-    pointer-events: none;
-}
-
 
 .edit-button {
     background-color: #007BFF; /* Blue color */
@@ -595,4 +560,8 @@ table.dataTable tbody tr:hover {
 
 #search-button:hover {
     /* Your custom styles for the button on hover here */
+}
+
+.clickable-row {
+    cursor: pointer;
 }

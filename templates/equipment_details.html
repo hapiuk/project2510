@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Equipment Details</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/your-custom-styles.css') }}">
+</head>
+<body>
+    <!-- Include the header -->
+    {% include 'header.html' %}
+    </header>
+
+    <div class="client-details-container">
+        <div class="client-details-header">
+            <h2>Equipment Details</h2>
+            <p>Equipment Number: {{ equipment_details.equipment_number }}</p>
+        </div>
+        <form action="/update-equipment" method="post" class="equipment-details-form">
+            <input type="hidden" name="equipment_number" value="{{ equipment_details.equipment_number }}" readonly>
+            
+            <div class="form-group">
+                <label for="client_name">Client:</label>
+                <p>{{ client_name }}</p>
+            </div>
+
+            <div class="form-group">
+                <label for="equipment_type">Equipment Type:</label>
+                <input type="text" name="equipment_type" id="equipment_type" value="{{ equipment_details.equipment_type }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="equipment_sub_type">Equipment Sub Type:</label>
+                <input type="text" name="equipment_sub_type" id="equipment_sub_type" value="{{ equipment_details.equipment_sub_type }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="serial_number">Serial Number:</label>
+                <input type="text" name="serial_number" id="serial_number" value="{{ equipment_details.serial_number }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="client_asset_id">Client Asset ID:</label>
+                <input type="text" name="client_asset_id" id="client_asset_id" value="{{ equipment_details.client_asset_id }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="sub_location">Sub Location:</label>
+                <input type="text" name="sub_location" id="sub_location" value="{{ equipment_details.sub_location }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="safe_working_load">Safe Working Load:</label>
+                <input type="text" name="safe_working_load" id="safe_working_load" value="{{ equipment_details.safe_working_load }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="inspection_frequency">Inspection Frequency:</label>
+                <input type="text" name="inspection_frequency" id="inspection_frequency" value="{{ equipment_details.inspection_frequency }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="year_of_manufacture">Year of Manufacture:</label>
+                <input type="text" name="year_of_manufacture" id="year_of_manufacture" value="{{ equipment_details.year_of_manufacture }}" required>
+            </div>
+            
+            <!-- Include more fields as needed -->
+
+            <div class="equipment-details-navigation" style="margin: auto; padding-left: 2%;">
+                <input type="submit" value="Save" class="button">
+                <a href="/equipment" class="button">Back to Equipment List</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
