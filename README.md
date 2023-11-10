@@ -63,7 +63,7 @@ Reporting WebApp Project (Template, will fill this out when i can be bothered.)
 
 # Project Roadmap
 
-## Month 1-2: Foundation and Client/Equipment Management Enhancements
+## Foundation and Client/Equipment Management Enhancements
 ### Week 1-2: Project Setup and Review
 - Familiarize with the current codebase and set up a development environment.
 - Document existing features and potential improvements.
@@ -72,7 +72,7 @@ Reporting WebApp Project (Template, will fill this out when i can be bothered.)
 - Enhance client and equipment management functionalities.
 - Implement validation and error handling.
 
-## Month 5-6: Contracts and Job Management Implementation
+## Contracts and Job Management Implementation
 ### Week 13-14: Contract Management Features
 - Develop features for creating, managing, and viewing contracts.
 
@@ -84,7 +84,7 @@ Reporting WebApp Project (Template, will fill this out when i can be bothered.)
 - Conduct thorough testing of the new features.
 - Make necessary adjustments based on feedback.
 
-## Month 3-4: Advanced Features and UI Improvements
+## Advanced Features and UI Improvements
 ### Week 5-6: Responsive Design and User Interface
 - Improve the UI for better responsiveness and user experience.
 
@@ -97,7 +97,7 @@ Reporting WebApp Project (Template, will fill this out when i can be bothered.)
 ### Week 11-12: User Authentication and Authorization
 - Implement a user authentication system with different roles and permissions.
 
-## Month 7-8: Enhancements and Preparing for Companion App
+## Enhancements and Preparing for Companion App
 ### Week 19-20: AJAX Enhancements and User Interaction
 - Implement AJAX for dynamic content loading and form submissions.
 
@@ -107,7 +107,7 @@ Reporting WebApp Project (Template, will fill this out when i can be bothered.)
 ### Week 23-24: Preparing APIs for Companion App
 - Develop and test APIs that will be used by the companion app.
 
-## Month 9-10: Companion App Initial Development
+## Companion App Initial Development
 ### Week 25-26: Companion App Planning and Setup
 - Define the scope and initial designs for the companion app.
 - Choose the technology stack and set up the mobile app project.
@@ -116,7 +116,7 @@ Reporting WebApp Project (Template, will fill this out when i can be bothered.)
 - Implement basic functionalities like viewing assigned jobs.
 - Set up user authentication in sync with the web application.
 
-## Month 11-12: Final Integration, Testing, and Documentation
+## Final Integration, Testing, and Documentation
 ### Week 29-30: Final Integration and Testing
 - Conduct integration testing for both web and companion app.
 - Ensure seamless functionality and data syncing.
