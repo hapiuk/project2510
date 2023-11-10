@@ -5,7 +5,7 @@ import subprocess
 import logging
 import csv
 from io import TextIOWrapper
-from flask import Flask, request, flash, render_template, redirect, jsonify, session, send_from_directory, url_for
+from flask import Flask, request, flash, render_template, redirect, jsonify, session, send_from_directory, url_for, send_file
 from werkzeug.utils import secure_filename
 import io
 import zipfile
@@ -111,14 +111,12 @@ def get_all_clients():
 def root():
     return render_template('index.html')
 
-# Client Functions
+########################################################################################################################################### Client Functions
 @app.route('/clients')
 def clients():
-    page = request.args.get('page', 1, type=int)
     search_query = request.args.get('search', '', type=str)
     success_message = request.args.get('success', '')
     error_message = request.args.get('error', '')
-    clients_per_page = 25  # Number of clients to show per page
 
     conn = get_db()
 
@@ -130,22 +128,18 @@ def clients():
             OR address_line_2 LIKE ? OR town_city LIKE ? OR county LIKE ?
             OR postcode LIKE ? OR phone_number LIKE ? OR status LIKE ?
             ORDER BY id
-            LIMIT ? OFFSET ?
         '''
-        search_params = (f"%{search_query}%",) * 8 + (clients_per_page, (page - 1) * clients_per_page)
+        search_params = (f"%{search_query}%",) * 8
         clients = conn.execute(query, search_params).fetchall()
     else:
         clients = conn.execute('''
             SELECT * FROM clients
             ORDER BY id
-            LIMIT ? OFFSET ?
-        ''', (clients_per_page, (page - 1) * clients_per_page)).fetchall()
-
-    total_clients = conn.execute('SELECT COUNT(*) FROM clients').fetchone()[0]
-    total_pages = (total_clients + clients_per_page - 1) // clients_per_page
+        ''').fetchall()
 
     conn.close()
-    return render_template('clients.html', clients=clients, success_message=success_message, error_message=error_message, total_pages=total_pages, current_page=page)
+    return render_template('clients.html', clients=clients, success_message=success_message, error_message=error_message)
+
 
 @app.route('/save-client', methods=['POST'])
 def save_client():
@@ -220,6 +214,16 @@ def update_client():
             session['error_message'] = error_message
 
     return redirect('/clients')
+
+
+###################################################################################################################################### Equipment Functions
+
+@app.route('/download-template', methods=['GET'])
+def download_template():
+    template_file = 'templates/equipment_template.csv'  # Path to your CSV template
+
+    # Set the content type to indicate it's a CSV file
+    return send_file(template_file, as_attachment=True, mimetype='text/csv')
 
 @app.route('/upload-equipment', methods=['POST'])
 def upload_equipment():
@@ -321,13 +325,13 @@ def get_client_list():
     return clients
 
 # Function to insert equipment data
-def insert_equipment(equipment_number, client_id, equipment_type, equipment_sub_type, serial_number, client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture):
+def insert_equipment(equipment_number, client_account_number, equipment_type, equipment_sub_type, serial_number, client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO equipment (equipment_number, client_id, equipment_type, equipment_sub_type, '
+    cursor.execute('INSERT INTO equipment (equipment_number, client_account_number, equipment_type, equipment_sub_type, '
                    'serial_number, client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture) '
                    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   (equipment_number, client_id, equipment_type, equipment_sub_type, serial_number, client_asset_id, sub_location,
+                   (equipment_number, client_account_number, equipment_type, equipment_sub_type, serial_number, client_asset_id, sub_location,
                     safe_working_load, inspection_frequency, year_of_manufacture))
     conn.commit()
     cursor.close()
@@ -355,7 +359,7 @@ def equipment_details(equipment_number):
 def update_equipment():
     if request.method == 'POST':
         equipment_number = request.form.get('equipment_number')
-        client_id = request.form.get('client_id')
+        client_account_number = request.form.get('client_account_number')
         equipment_type = request.form.get('equipment_type')
         equipment_sub_type = request.form.get('equipment_sub_type')
         serial_number = request.form.get('serial_number')
@@ -390,29 +394,19 @@ def update_equipment():
 def equipment():
     equipment = get_equipment_list()
     clients = get_all_clients()
-
-    page = request.args.get('page', 1, type=int)
     search_query = request.args.get('search', '', type=str)
-    items_per_page = 25
 
+    # Apply filtering based on search query
     if search_query:
         equipment = [item for item in equipment if search_query.lower() in str(item).lower()]
 
-    total_items = len(equipment)
-    total_pages = (total_items + items_per_page - 1) // items_per_page
-
-    start_index = (page - 1) * items_per_page
-    end_index = start_index + items_per_page
-    equipment_page = equipment[start_index:end_index]
-
     return render_template(
         'equipment.html',
-        equipment=equipment_page,
+        equipment=equipment,
         clients=clients,
-        total_pages=total_pages,
-        current_page=page,
         search_query=search_query
     )
+
 
 @app.route('/equipment/create', methods=['POST'])
 def create_equipment():
@@ -421,10 +415,10 @@ def create_equipment():
         # Process the uploaded CSV file and obtain equipment data
         equipment_data = process_equipment_csv(request.files['csv_file'])
 
-        # Insert equipment data into the database, including client_id from CSV
+        # Insert equipment data into the database, including client_account_number from CSV
         for equipment in equipment_data:
             equipment_number = equipment['equipment_number']
-            client_id = equipment['client_id']
+            client_account_number = equipment['client_account_number']
             equipment_type = equipment['equipment_type']
             equipment_sub_type = equipment['equipment_sub_type']
             serial_number = equipment['serial_number']
@@ -434,7 +428,7 @@ def create_equipment():
             inspection_frequency = equipment['inspection_frequency']
             year_of_manufacture = equipment['year_of_manufacture']
 
-            insert_equipment(equipment_number, client_id, equipment_type, equipment_sub_type, serial_number,
+            insert_equipment(equipment_number, client_account_number, equipment_type, equipment_sub_type, serial_number,
                              client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture)
 
 

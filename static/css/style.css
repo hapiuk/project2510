@@ -434,6 +434,7 @@ nav ul li a:hover {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s; /* Add a smooth color transition */
+    margin-left: 5px;
 }
 
 .search button:hover {
