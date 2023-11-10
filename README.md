@@ -3,76 +3,83 @@ Reporting WebApp Project (Template, will fill this out when i can be bothered.)
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Database](#database)
-- [File Structure](#file-structure)
+- [Roadmap](#project-roadmap)
+- [Installation](##installation)
 - [Contributing](#contributing)
-- [License](#license)
 - [Contact](#contact)
 
-## Introduction
+# Project Roadmap
 
-1. app.py (Application Entry Point)
+## Foundation and Client/Equipment Management Enhancements
+### Week 1-2: Project Setup and Review
+- Familiarize with the current codebase and set up a development environment.
+- Document existing features and potential improvements.
 
-    The Flask application's main Python file.
-    Defines routes and contains logic for request handling.
+### Week 3-4: Basic Client and Equipment Management Features
+- Enhance client and equipment management functionalities.
+- Implement validation and error handling.
 
-2. index.html (Home Page)
+## Contracts and Job Management Implementation
+### Week 5-6: Contract Management Features
+- Develop features for creating, managing, and viewing contracts.
 
-    Presumed main landing page for the application.
-    Links to different sections of the website.
+### Week 7-8: Job Creation and Assignment Logic
+- Implement logic for creating jobs based on contracts.
+- Develop a system for assigning and managing these jobs.
 
-3. clients.html (Clients List Page)
+### Week 9-10: Testing and Refining Contract and Job Features
+- Conduct thorough testing of the new features.
+- Make necessary adjustments based on feedback.
 
-    Lists all clients in a table format.
+## Advanced Features and UI Improvements
+### Week 11-12: Responsive Design and User Interface
+- Improve the UI for better responsiveness and user experience.
 
-    May include options to view details, edit, or delete client records.
+### Week 13-14: Advanced Search and Filtering
+- Develop advanced search capabilities for clients and equipment.
 
-    Search functionality to filter the client list.
+### Week 15-16: Dashboard Implementation
+- Design and implement a dashboard for quick insights.
 
-    Endpoint in app.py:
-        GET endpoint, such as /clients, to retrieve and display all clients.
+### Week 17-18: User Authentication and Authorization
+- Implement a user authentication system with different roles and permissions.
 
-4. client_details.html (Client Details Page)
+## Enhancements and Preparing for Companion App
+### Week 19-20: AJAX Enhancements and User Interaction
+- Implement AJAX for dynamic content loading and form submissions.
 
-    Displays detailed information for a single client.
+### Week 21-22: Error Handling and Validation Enhancements
+- Enhance error handling and data validation on both client and server-side.
 
-    Allows for editing and updating client information.
+### Week 23-24: Preparing APIs for Companion App
+- Develop and test APIs that will be used by the companion app.
 
-    Endpoint in app.py:
-        GET endpoint, like /clients/<id>, to display a specific client's details.
-        POST endpoint for updates, possibly /clients/update.
+## Companion App Initial Development
+### Week 25-26: Companion App Planning and Setup
+- Define the scope and initial designs for the companion app.
+- Choose the technology stack and set up the mobile app project.
 
-5. equipment.html (Equipment Tracker Page)
+### Week 27-28: Basic App Features and Authentication
+- Implement basic functionalities like viewing assigned jobs.
+- Set up user authentication in sync with the web application.
 
-    Interface for tracking equipment, including a table and a form for adding new equipment.
+## Final Integration, Testing, and Documentation
+### Week 29-30: Final Integration and Testing
+- Conduct integration testing for both web and companion app.
+- Ensure seamless functionality and data syncing.
 
-    Search and pagination for the equipment list.
+### Week 31-32: Documentation and Launch Preparation
+- Update documentation to include all new features and the companion app.
+- Prepare for the launch and deployment of the system.
 
-    Endpoint in app.py:
-        GET endpoint to show equipment, potentially /equipment.
-        POST endpoint for form submissions, such as /equipment/create.
+### Week 33-34: Final Touches and Review
+- Address any last-minute issues or improvements.
+- Conduct final user acceptance testing.
 
-6. header.html (Shared Header Component)
+## Ongoing: Continuous Improvement and Adjustments
+- Regularly gather user feedback for continuous improvement.
+- Monitor the system for any issues and implement updates as needed.
 
-    A common header included in various templates.
-
-    Contains navigation links and branding elements.
-
-    Endpoint in `app.py:**
-        No unique endpoint; used as part of other templates.
-
-## Features
-
-List the key features of your project. What can users do with it? Highlight the functionalities and capabilities of your application.
-
-## Requirements
-
-List the prerequisites and requirements needed to run your project. Include information about the programming language, frameworks, libraries, and dependencies.
 
 ## Installation
 
