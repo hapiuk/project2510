@@ -73,28 +73,28 @@ Reporting WebApp Project (Template, will fill this out when i can be bothered.)
 - Implement validation and error handling.
 
 ## Contracts and Job Management Implementation
-### Week 13-14: Contract Management Features
+### Week 5-6: Contract Management Features
 - Develop features for creating, managing, and viewing contracts.
 
-### Week 15-16: Job Creation and Assignment Logic
+### Week 7-8: Job Creation and Assignment Logic
 - Implement logic for creating jobs based on contracts.
 - Develop a system for assigning and managing these jobs.
 
-### Week 17-18: Testing and Refining Contract and Job Features
+### Week 9-10: Testing and Refining Contract and Job Features
 - Conduct thorough testing of the new features.
 - Make necessary adjustments based on feedback.
 
 ## Advanced Features and UI Improvements
-### Week 5-6: Responsive Design and User Interface
+### Week 11-12: Responsive Design and User Interface
 - Improve the UI for better responsiveness and user experience.
 
-### Week 7-8: Advanced Search and Filtering
+### Week 13-14: Advanced Search and Filtering
 - Develop advanced search capabilities for clients and equipment.
 
-### Week 9-10: Dashboard Implementation
+### Week 15-16: Dashboard Implementation
 - Design and implement a dashboard for quick insights.
 
-### Week 11-12: User Authentication and Authorization
+### Week 17-18: User Authentication and Authorization
 - Implement a user authentication system with different roles and permissions.
 
 ## Enhancements and Preparing for Companion App
