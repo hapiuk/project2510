@@ -4,14 +4,9 @@ Reporting WebApp Project (Template, will fill this out when i can be bothered.)
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Database](#database)
-- [File Structure](#file-structure)
+- [Roadmap](#requirements)
+- [Installation](##installation)
 - [Contributing](#contributing)
-- [License](#license)
 - [Contact](#contact)
 
 ## Introduction
