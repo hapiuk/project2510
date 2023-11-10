@@ -1,176 +1,167 @@
-<!-- Include the header -->
-{% include 'header.html' %}
-    <div class="search">
-        <button id="add-client-button" onclick="searchClients()">New Client</button>
-        <button>Upload Clients</button>
-    </div>
-</header>
+    <!-- Include the header -->
+    {% include 'header.html' %}
+        <div class="search">
+            <button id="add-client-button" onclick="searchClients()">New Client</button>
+            <button id="upload-clients-button">Upload Clients</button>
+        </div>
+    </header>
 
-<select id="client_id" style="display: none;">
-    {% for client in clients %}
-    <option value="{{ client.id }}">{{ client.name }}</option>
-    {% endfor %}
-</select>
-
-<!-- Add Client Modal -->
-<div id="add-client-modal" class="modal">
-    <div class="modal-content" style="width: 45%; margin-top: 1%;">
-        <span class="close">&times;</span>
-        <h2>Add New Client</h2>
-        <form action="/save-client" method="post" id="add-client-form">
-            <input type="hidden" name="account_number" id="account_number">
-
-            <label for="client_name">Client Name:</label>
-            <input type="text" name="client_name" id="client_name" required>
-
-            <label for="address_line_1">Address Line 1:</label>
-            <input type="text" name="address_line_1" id="address_line_1" required>
-
-            <label for="address_line_2">Address Line 2:</label>
-            <input type="text" name="address_line_2" id="address_line_2">
-
-            <label for="town_city">Town/City:</label>
-            <input type="text" name="town_city" id="town_city" required>
-
-            <label for="county">County:</label>
-            <input type="text" name="county" id="county" required>
-
-            <label for="postcode">Postcode:</label>
-            <input type="text" name="postcode" id="postcode" required>
-
-            <label for="phone_number">Phone Number:</label>
-            <input type="text" name="phone_number" id="phone_number" required>
-
-            <label for="status">Status:</label>
-            <input type="text" name="status" id="status" required>
-
-            <input type="submit" value="Add Client">
-        </form>
-    </div>
-</div>
-
-<!-- View Clients -->
-<div style="width: 95%; padding-top: 1%; margin: auto;">
-    <table id="clients-table" style="width: 100%; margin-top: 10px;">
-        <thead>
-            <tr>
-                <th sortable="true">Account Number</th>
-                <th sortable="true">Client Name</th>
-                <th sortable="true">Address Line 1</th>
-                <th sortable="true">Address Line 2</th>
-                <th sortable="true">Town/City</th>
-                <th sortable="true">County</th>
-                <th sortable="true">Postcode</th>
-                <th sortable="true">Phone Number</th>
-                <th sortable="true">Status</th>
-            </tr>
-        </thead>
-        <!-- Display clients from the database -->
+    <select id="client_id" style="display: none;">
         {% for client in clients %}
-            <tr class="clickable-row" data-href="{{ url_for('client_details', account_number=client.account_number) }}">
-                <td>{{ client.account_number }}</td>
-                <td>{{ client.client_name }}</a></td>
-                <td>{{ client.address_line_1 }}</td>
-                <td>{{ client.address_line_2 }}</td>
-                <td>{{ client.town_city }}</td>
-                <td>{{ client.county }}</td>
-                <td>{{ client.postcode }}</td>
-                <td>{{ client.phone_number }}</td>
-                <td>{{ client.status }}</td>
-            </tr>
+        <option value="{{ client.id }}">{{ client.name }}</option>
         {% endfor %}
-    </table>
-</div>
-<script>
-    // Function to get client details and pre-fill the edit modal
-    function editClient(accountNumber) {
-        // Fetch client details
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', '/get-client-details/' + accountNumber, true);
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                var clientDetails = JSON.parse(xhr.responseText);
-                // Pre-fill the fields in the edit modal with the client details
-                for (var key in clientDetails) {
-                    if (clientDetails.hasOwnProperty(key) && document.getElementById('edit-' + key)) {
-                        document.getElementById('edit-' + key).value = clientDetails[key];
+    </select>
+
+    <!-- Add Client Upload Modal -->
+    <div id="add-client-upload-modal" class="modal">
+        <div class="modal-content" style="width: 45%; margin-top: 1%;">
+            <span class="close">&times;</span>
+            <h2>Upload Clients CSV</h2>
+            <form action="/upload-clients" method="post" enctype="multipart/form-data" id="upload-clients-form">
+                <div class="form-group">
+                    <label for="csv_file">Upload Clients CSV File:</label>
+                    <input type="file" name="csv_file" id="csv_file" accept=".csv">
+                </div>
+                <div class="form-group">
+                    <input id="upload-clients-button" type="submit" value="Upload CSV" class="button">
+                </div>
+            </form>
+            <a href="/download-client-template" class="btn btn-secondary" download>Download Template</a>
+        </div>
+    </div>
+
+
+    <!-- Add Client Modal -->
+    <div id="add-client-modal" class="modal">
+        <div class="modal-content" style="width: 45%; margin-top: 1%;">
+            <span class="close">&times;</span>
+            <h2>Add New Client</h2>
+            <form action="/save-client" method="post" id="add-client-form">
+                <input type="hidden" name="account_number" id="account_number">
+
+                <label for="client_name">Client Name:</label>
+                <input type="text" name="client_name" id="client_name" required>
+
+                <label for="address_line_1">Address Line 1:</label>
+                <input type="text" name="address_line_1" id="address_line_1" required>
+
+                <label for="address_line_2">Address Line 2:</label>
+                <input type="text" name="address_line_2" id="address_line_2">
+
+                <label for="town_city">Town/City:</label>
+                <input type="text" name="town_city" id="town_city" required>
+
+                <label for="county">County:</label>
+                <input type="text" name="county" id="county" required>
+
+                <label for="postcode">Postcode:</label>
+                <input type="text" name="postcode" id="postcode" required>
+
+                <label for="phone_number">Phone Number:</label>
+                <input type="text" name="phone_number" id="phone_number" required>
+
+                <label for="status">Status:</label>
+                <input type="text" name="status" id="status" required>
+
+                <input type="submit" value="Add Client">
+            </form>
+        </div>
+    </div>
+
+    <!-- View Clients -->
+    <div style="width: 95%; padding-top: 1%; margin: auto;">
+        <table id="clients-table" style="width: 100%; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th sortable="true">Account Number</th>
+                    <th sortable="true">Client Name</th>
+                    <th sortable="true">Address Line 1</th>
+                    <th sortable="true">Address Line 2</th>
+                    <th sortable="true">Town/City</th>
+                    <th sortable="true">County</th>
+                    <th sortable="true">Postcode</th>
+                    <th sortable="true">Phone Number</th>
+                    <th sortable="true">Status</th>
+                </tr>
+            </thead>
+            <!-- Display clients from the database -->
+            {% for client in clients %}
+                <tr class="clickable-row" data-href="{{ url_for('client_details', account_number=client.account_number) }}">
+                    <td>{{ client.account_number }}</td>
+                    <td>{{ client.client_name }}</td>
+                    <td>{{ client.address_line_1 }}</td>
+                    <td>{{ client.address_line_2 }}</td>
+                    <td>{{ client.town_city }}</td>
+                    <td>{{ client.county }}</td>
+                    <td>{{ client.postcode }}</td>
+                    <td>{{ client.phone_number }}</td>
+                    <td>{{ client.status }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <script>
+        // Function to perform the client search
+        function searchClients() {
+            const searchInput = document.getElementById('search').value;
+            const url = `/clients?search=${searchInput}`;
+            window.location.href = url;
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Open the Add Client Modal
+            document.getElementById('add-client-button').addEventListener('click', function() {
+                document.getElementById('add-client-modal').style.display = 'block';
+                var clientTable = document.getElementById('clients-table');
+                var clientCount = clientTable.rows.length - 1;
+                var newAccountNumber = 'ACC' + ('000' + (clientCount + 1)).slice(-3);
+                document.getElementById('account_number').value = newAccountNumber;
+            });
+
+            // Open the Upload Clients Modal
+            document.getElementById('upload-clients-button').addEventListener('click', function() {
+                document.getElementById('add-client-upload-modal').style.display = 'block';
+            });
+
+            // Attach close event listeners to all elements with class 'close'
+            var closeButtons = document.getElementsByClassName('close');
+            for (var i = 0; i < closeButtons.length; i++) {
+                closeButtons[i].addEventListener('click', function() {
+                    var modal = this.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
                     }
-                }
-                // Display the edit modal
-                document.getElementById('edit-client-modal').style.display = 'block';
+                });
             }
-        };
-        xhr.send();
-    }
-    // Function to perform the client search
-    function searchClients() {
-        const searchInput = document.getElementById('search').value;
-        const url = `/clients?search=${searchInput}`;
-        window.location.href = url;
-    }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        // Open the Add Client Modal
-        document.getElementById('add-client-button').addEventListener('click', function() {
-            document.getElementById('add-client-modal').style.display = 'block';
-            // Automatically generate and set the Account Number
-            var clientTable = document.getElementById('clients-table');
-            var clientCount = clientTable.rows.length - 1;
-            var newAccountNumber = 'ACC' + ('000' + (clientCount + 1)).slice(-3);
-            document.getElementById('account_number').value = newAccountNumber;
+            // Initialize DataTables on your clients table
+            $('#clients-table').DataTable({
+                searching: true,
+                paging: true
+                // Additional DataTable options can be added here
+            });
+
+            // Handle click on table rows
+            $('#clients-table tbody').on('click', '.clickable-row', function() {
+                window.location.href = $(this).data('href');
+            });
+
+            // Add client form submission
+            var addClientForm = document.getElementById('add-client-form');
+            addClientForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                var formData = new FormData(addClientForm);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/save-client', true);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4 && xhr.status === 200) {
+                        // Handle the response here
+                        // Potentially reload the page or update the table to show the new client
+                    }
+                };
+                xhr.send(formData);
+            });
         });
-
-        $('#clients-table').DataTable({
-            searching: true, // Enable search bar
-            paging: true,    // Enable pagination
-            // Add other DataTable options as needed
-        });
-
-        $('#clients-table tbody').on('click', '.clickable-row', function() {
-            window.location.href = $(this).data('href');
-        });
-
-        // Close the Add Client Modal
-        document.getElementsByClassName('close')[0].addEventListener('click', function() {
-            document.getElementById('add-client-modal').style.display = 'none';
-        });
-
-        // Add client form submission
-        var addClientForm = document.getElementById('add-client-form');
-        addClientForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            var formData = new FormData(addClientForm);
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/save-client', true);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    // Handle the response here
-                    // Reload the page or part of the page to show the new client
-                }
-            };
-            xhr.send(formData);
-        });
-
-        // Searching functionality
-        document.getElementById('search').addEventListener('keypress', function(event) {
-            if (event.key === "Enter") {
-                searchClients();
-            }
-        });
-
-
-        // Close the edit client modal
-        document.getElementById('close-edit-modal').addEventListener('click', function() {
-            document.getElementById('edit-client-modal').style.display = 'none';
-        });
-
-        // Initialize DataTables on your clients table
-        var dataTable = $('#clients-table').DataTable({
-            // ... You can add any DataTables options here
-        });
-
-    });
-
-</script>
+    </script>
 </body>
 </html>

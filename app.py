@@ -140,6 +140,44 @@ def clients():
     conn.close()
     return render_template('clients.html', clients=clients, success_message=success_message, error_message=error_message)
 
+@app.route('/upload-clients', methods=['POST'])
+def upload_clients():
+    if 'csv_file' not in request.files:
+        flash('No file part', 'error')
+        return redirect(request.url)
+
+    file = request.files['csv_file']
+    if file.filename == '':
+        flash('No selected file', 'error')
+        return redirect(request.url)
+
+    csv_file = TextIOWrapper(file, encoding='utf-8')
+    reader = csv.DictReader(csv_file)
+
+    conn = get_db()
+    for row in reader:
+        account_number = row.get('account_number')
+        client_name = row.get('client_name')
+        address_line_1 = row.get('address_line_1')
+        address_line_2 = row.get('address_line_2')
+        town_city = row.get('town_city')
+        county = row.get('county')
+        postcode = row.get('postcode')
+        phone_number = row.get('phone_number')
+        status = row.get('status')
+        date_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        conn.execute('''INSERT INTO clients (account_number, client_name, address_line_1, address_line_2, 
+                        town_city, county, postcode, phone_number, status, date_stamp) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', 
+                     (account_number, client_name, address_line_1, address_line_2, 
+                      town_city, county, postcode, phone_number, status, date_stamp))
+
+    conn.commit()
+    conn.close()
+
+    flash('Clients uploaded successfully', 'success')
+    return redirect(url_for('clients'))
 
 @app.route('/save-client', methods=['POST'])
 def save_client():
@@ -214,6 +252,13 @@ def update_client():
             session['error_message'] = error_message
 
     return redirect('/clients')
+
+@app.route('/download-client-template', methods=['GET'])
+def download_client_template():
+    template_file = 'templates/clients_template.csv'  # Path to your CSV template
+
+    # Set the content type to indicate it's a CSV file
+    return send_file(template_file, as_attachment=True, mimetype='text/csv')
 
 
 ###################################################################################################################################### Equipment Functions
