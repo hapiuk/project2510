@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Contract Details</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% include 'header.html' %}
+    <div class="contract-details-container">
+        <h2>Contract Details</h2>
+        <form action="/update-contract" method="post" class="contract-details-form">
+            <input type="hidden" name="contract_id" value="{{ contract_details.id }}" readonly>
+
+            <div class="form-group">
+                <label for="client_name">Client Name:</label>
+                <select name="client_name" id="client_name" required>
+                    <!-- Populate with clients -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="equipment">Equipment:</label>
+                <select multiple name="equipment[]" id="equipment">
+                    <!-- Populate with equipment linked to the selected client -->
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="job_type">Job Type:</label>
+                <select name="job_type" id="job_type">
+                    <option value="Contract">Contract</option>
+                    <option value="One-Off">One-Off</option>
+                </select>
+            </div>
+
+            <!-- Include fields for Start Date, End Date, Renewal Date, Contract Charge, and Billing Cycle -->
+
+            <div class="contract-details-navigation">
+                <input type="submit" value="Save" class="button">
+                <a href="/contracts" class="button">Back to Contracts List</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

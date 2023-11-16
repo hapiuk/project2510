@@ -27,6 +27,25 @@ def get_db():
     conn.row_factory = sqlite3.Row
     return conn
 
+def create_contracts_table():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS contracts (
+            id INTEGER PRIMARY KEY,
+            client_account_number TEXT NOT NULL,
+            equipment_ids TEXT,
+            job_type TEXT,
+            start_date DATE,
+            end_date DATE,
+            renewal_date DATE,
+            contract_charge FLOAT,
+            billing_cycle TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
 def create_clients_table():
     conn = get_db()
     conn.execute('''
@@ -492,8 +511,74 @@ def equipment_search():
 
     return jsonify(equipment)
 
+###################################################################################################################################### Contract Functions
+@app.route('/get-equipment-for-client/<account_number>')
+def get_equipment_for_client(account_number):
+    print("Received Account Number:", account_number)  # Debugging line
+    equipment = fetch_equipment_for_client(account_number)
+    print("Returning Equipment:", equipment)  # Debugging line
+    return jsonify([dict(eq) for eq in equipment])
+
+def fetch_equipment_for_client(account_number):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id, equipment_number, equipment_type 
+        FROM equipment 
+        WHERE client_account_number = ?
+    ''', (account_number,))
+    equipment = cursor.fetchall()
+    conn.close()
+    return equipment
+
+@app.route('/contracts')
+def contracts():
+    contracts = get_all_contracts()  # Fetch all contracts from the database
+    clients = get_all_clients()  # Fetch all clients
+    equipment = get_equipment_list()  # Fetch all equipment
+    return render_template('contracts.html', contracts=contracts, clients=clients, equipment=equipment)
+
+def get_all_contracts():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT contracts.*, clients.client_name
+        FROM contracts
+        INNER JOIN clients ON contracts.client_account_number = clients.account_number
+    ''')
+    contracts = cursor.fetchall()
+    conn.close()
+    return contracts
+
+
+@app.route('/create-contract', methods=['POST'])
+def create_contract():
+    if request.method == 'POST':
+        client_account_number = request.form['client_account_number']
+        equipment_ids = request.form.getlist('equipment[]')  # Handle multiple equipment selections
+        job_type = request.form['job_type']
+        start_date = request.form['start_date']
+        end_date = request.form['end_date']
+        renewal_date = calculate_renewal_date(end_date)  # Implement this function based on your logic
+        contract_charge = request.form['contract_charge']
+        billing_cycle = request.form['billing_cycle']
+
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute('''INSERT INTO contracts (
+                              client_account_number, equipment_ids, job_type, start_date, end_date,
+                              renewal_date, contract_charge, billing_cycle
+                          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''', 
+                       (client_account_number, ','.join(equipment_ids), job_type, start_date, 
+                        end_date, renewal_date, contract_charge, billing_cycle))
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for('contracts'))
+
 create_equipment_table()
 create_clients_table()
+create_contracts_table() 
 
 if __name__ == "__main__":
     import socket
