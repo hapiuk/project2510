@@ -38,25 +38,41 @@
             <h2>Create New Contract</h2>
             <form action="/create-contract" method="post" id="create-contract-form">
                 <div class="form-group">
-                    <label for="client_account_number">Client Name:</label>
+                    <label for="client_account_number">Client Name:</label>  
                     <select name="client_account_number" id="client_account_number" required>
                         <option value="">Select a client</option>
-                        <option value="ACC001">Client 1</option>
-                        <option value="ACC002">Client 2</option>
-                        <option value="ACC003">Client 3</option>
+                        {% for client in clients %}
+                            <option value="{{ client.account_number }}">{{ client.client_name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
 
                 <div class="form-group">
                     <label for="equipment">Equipment:</label>
                     <select multiple name="equipment[]" id="equipment">
-                        {% for equip in equipment %}
-                            <option value="{{ equip.id }}">{{ equip.equipment_number }} - {{ equip.equipment_type }}</option>
-                        {% endfor %}
+                        <!-- Equipment options will be dynamically updated here -->
                     </select>
                 </div>
 
-                <!-- Additional fields for job type, start/end dates, charge, billing cycle -->
+                <label for="job_type">Job Type:</label>
+                <select name="job_type" id="job_type" required>
+                    <option value="">Select a client</option>
+                    <option value="LOLER">LOLER</option>
+                    <option value="PUWER">PUWER</option>
+                </select>
+
+                <label for="start_date">Start Date:</label>
+                <input type="date" name="start_date" id="start_date" required>
+
+                <label for="contract_charge">Contract Charge:</label>
+                <input type="number" step="0.01" name="contract_charge" id="contract_charge" required>
+
+                <label for="billing_cycle">Billing Cycle:</label>
+                <select name="billing_cycle" id="billing_cycle" required>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="annually">Annually</option>
+                </select>
 
                 <input type="submit" value="Create Contract" class="button">
             </form>
@@ -81,12 +97,12 @@
                 {% for contract in contracts %}
                 <tr class="clickable-row" data-href="{{ url_for('contract_details', contract_id=contract.id) }}">
                     <td>{{ contract.id }}</td>
-                    <td>{{ contract.client_id }}</td>
+                    <td>{{ contract.client_name }}</td>
                     <td>{{ contract.job_type }}</td>
                     <td>{{ contract.start_date }}</td>
                     <td>{{ contract.end_date }}</td>
                     <td>{{ contract.renewal_date }}</td>
-                    <td>{{ contract.charge }}</td>
+                    <td>{{ contract.contract_charge }}</td>
                     <td>{{ contract.billing_cycle }}</td>
                 </tr>
                 {% endfor %}
@@ -94,48 +110,55 @@
         </table>
     </div>
     <script>
-        $(document).ready(function() {
-            // Update equipment list based on selected client
-            $('#client_account_number').on('change', function() {
-                var accountNumber = $(this).val();
-                console.log("Selected Account Number:", accountNumber); // Debugging line
-                if (accountNumber) {
-                    fetch(`/get-equipment-for-client/${accountNumber}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            var equipmentSelect = $('#equipment');
-                            equipmentSelect.empty();
-                            data.forEach(function(equip) {
-                                equipmentSelect.append(new Option(equip.equipment_number + ' - ' + equip.equipment_type, equip.id));
-                            });
-                        })
-                        .catch(error => console.error('Error:', error));
-                } else {
-                    alert("No account number selected");
-                }
-            });
+    $(document).ready(function() {
+        // Event listener for client dropdown change
+        $('#client_account_number').on('change', function() {
 
-            // Initialize DataTable
-            $('#contracts-table').DataTable({
-                "paging": true,
-                "searching": true,
-                "ordering": true
-            });
+            var selectedAccountNumber = $(this).val();
+            console.log('Selected Account Number:', selectedAccountNumber);
 
-            // Make table rows clickable
-            $('#contracts-table').on('click', '.clickable-row', function() {
-                window.location.href = $(this).data('href');
-            });
+            // Clear the equipment options
+            $('#equipment').empty();
 
-            // Event listener for opening and closing the contract creation modal
-            $('#create-contract-button').on('click', function() {
-                $('#create-contract-modal').show();
-            });
-            $('.close').on('click', function() {
-                $('.modal').hide();
-            });
-
+            if (selectedAccountNumber) {
+                // Send the selected account number as a parameter in the AJAX request
+                $.ajax({
+                    url: '/get-equipment-for-client/' + selectedAccountNumber,
+                    type: 'GET',
+                    success: function(data) {
+                        var equipmentSelect = $('#equipment');
+                        data.forEach(function(equip) {
+                            equipmentSelect.append(new Option(equip.equipment_number + ' - ' + equip.equipment_type, equip.id));
+                        });
+                    },
+                    error: function(error) {
+                        console.error('Error:', error);
+                    }
+                });
+            }
         });
+
+
+        // Initialize DataTable
+        $('#contracts-table').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true
+        });
+
+        // Make table rows clickable
+        $('#contracts-table').on('click', '.clickable-row', function() {
+            window.location.href = $(this).data('href');
+        });
+
+        // Event listener for opening and closing the contract creation modal
+        $('#create-contract-button').on('click', function() {
+            $('#create-contract-modal').show();
+        });
+        $('.close').on('click', function() {
+            $('.modal').hide();
+        });
+    });
     </script>
 </body>
 </html>
