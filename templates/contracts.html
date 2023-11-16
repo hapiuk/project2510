@@ -40,9 +40,10 @@
                 <div class="form-group">
                     <label for="client_account_number">Client Name:</label>
                     <select name="client_account_number" id="client_account_number" required>
-                        {% for client in clients %}
-                            <option value="{{ client.account_number }}">{{ client.client_name }}</option>
-                        {% endfor %}
+                        <option value="">Select a client</option>
+                        <option value="ACC001">Client 1</option>
+                        <option value="ACC002">Client 2</option>
+                        <option value="ACC003">Client 3</option>
                     </select>
                 </div>
 

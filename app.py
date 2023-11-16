@@ -525,7 +525,7 @@ def fetch_equipment_for_client(account_number):
     cursor.execute('''
         SELECT id, equipment_number, equipment_type 
         FROM equipment 
-        WHERE client_account_number = "?"
+        WHERE client_account_number = ?
     ''', (account_number,))
     equipment = cursor.fetchall()
     conn.close()
