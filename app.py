@@ -567,28 +567,43 @@ def contracts():
     equipment = get_equipment_list()  # Fetch all equipment
     return render_template('contracts.html', contracts=contracts, clients=clients, equipment=equipment)
 
-def get_all_contracts():
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT contracts.*, clients.client_name
-        FROM contracts
-        JOIN clients ON contracts.client_account_number = clients.account_number
-    ''')
-    contracts = cursor.fetchall()
-    conn.close()
-    return [dict(contract) for contract in contracts]
-
 @app.route('/contract-details/<contract_id>')
 def contract_details(contract_id):
-    contract_data = get_contract_data(contract_id)  # This should fetch contract and associated client data
+    # Fetch contract data based on contract_id
+    contract_data = get_contract_data(contract_id)
     if contract_data:
-        print(contract_data)  # Debug print
+        # Fetch equipment list for the contract
+        equipment_ids = contract_data['equipment_ids'].split(',')
+        equipment_list = get_equipment_for_ids(equipment_ids)
+        contract_data['equipment_list'] = equipment_list
+
         return render_template('contract_details.html', contract=contract_data)
     else:
+        # Handle the case where no contract is found
         flash('Contract not found', 'error')
         return redirect(url_for('contracts'))
 
+def get_contract_data(contract_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT contracts.*, clients.client_name 
+        FROM contracts
+        JOIN clients ON contracts.client_account_number = clients.account_number
+        WHERE contracts.id = ?
+    ''', (contract_id,))
+    contract_data = cursor.fetchone()
+    conn.close()
+    return dict(contract_data) if contract_data else None
+
+def get_equipment_for_ids(equipment_ids):
+    conn = get_db()
+    cursor = conn.cursor()
+    query = 'SELECT * FROM equipment WHERE id IN ({})'.format(','.join('?' for _ in equipment_ids))
+    cursor.execute(query, equipment_ids)
+    equipment_list = cursor.fetchall()
+    conn.close()
+    return [dict(eq) for eq in equipment_list]
 
 @app.route('/create-contract', methods=['POST'])
 def create_contract():
