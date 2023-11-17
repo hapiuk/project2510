@@ -567,6 +567,18 @@ def contracts():
     equipment = get_equipment_list()  # Fetch all equipment
     return render_template('contracts.html', contracts=contracts, clients=clients, equipment=equipment)
 
+def get_all_contracts():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT contracts.*, clients.client_name
+        FROM contracts
+        JOIN clients ON contracts.client_account_number = clients.account_number
+    ''')
+    contracts = cursor.fetchall()
+    conn.close()
+    return [dict(contract) for contract in contracts]
+
 @app.route('/contract-details/<contract_id>')
 def contract_details(contract_id):
     # Fetch contract data based on contract_id
