@@ -599,10 +599,7 @@ def get_contract_data(contract_id):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT contracts.*, clients.client_name 
-        FROM contracts
-        JOIN clients ON contracts.client_account_number = clients.account_number
-        WHERE contracts.id = ?
+        SELECT * FROM contracts WHERE id = ?
     ''', (contract_id,))
     contract_data = cursor.fetchone()
     conn.close()
@@ -616,6 +613,7 @@ def get_equipment_for_ids(equipment_ids):
     equipment_list = cursor.fetchall()
     conn.close()
     return [dict(eq) for eq in equipment_list]
+
 
 @app.route('/create-contract', methods=['POST'])
 def create_contract():
