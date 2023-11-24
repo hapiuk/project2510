@@ -1,13 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-    <title>Contracts</title>
+    <title>Trackex</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/datatable.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/datatable.min.js') }}"></script>
 </head>
 <body>
-    {% include 'header.html' %}        
+<header>
+    <nav>
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#">Jobs</a></li>
+            <li><a href="/clients">Clients</a></li>
+            <li><a href="/equipment">Equipment</a></li>
+            <li><a href="/contracts">Contracts</a></li>
+            <li class="dropdown">
+                <a href="#">Account</a>
+                <div class="dropdown-content">
+                    <a href="/upload">Settings</a>
+                    <a href="/assettracker">Log Out</a>
+                </div>
+            </li>
+        </ul>
+    </nav>       
     <div class="search">
             <button id="create-contract-button">Create New Contract</button>
             <!-- <button id="upload-clients-button">Upload Contracts</button> -->
