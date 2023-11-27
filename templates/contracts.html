@@ -1,103 +1,14 @@
-<!doctype html>
-<html>
-<head>
-    <title>Trackex</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/datatable.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/datatable.min.js') }}"></script>
-</head>
-<body>
-<header>
-    <nav>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">Jobs</a></li>
-            <li><a href="/clients">Clients</a></li>
-            <li><a href="/equipment">Equipment</a></li>
-            <li><a href="/contracts">Contracts</a></li>
-            <li class="dropdown">
-                <a href="#">Account</a>
-                <div class="dropdown-content">
-                    <a href="/upload">Settings</a>
-                    <a href="/assettracker">Log Out</a>
-                </div>
-            </li>
-        </ul>
-    </nav>       
-    <div class="search">
-            <button id="create-contract-button">Create New Contract</button>
-            <!-- <button id="upload-clients-button">Upload Contracts</button> -->
-        </div>
-    </header>
-
-    <!-- Add Client Upload Modal 
-    <div id="add-client-upload-modal" class="modal">
-        <div class="modal-content" style="width: 45%; margin-top: 1%;">
-            <span class="close">&times;</span>
-            <h2>Upload Clients CSV</h2>
-            <form action="/upload-clients" method="post" enctype="multipart/form-data" id="upload-clients-form">
-                <div class="form-group">
-                    <label for="csv_file">Upload Clients CSV File:</label>
-                    <input type="file" name="csv_file" id="csv_file" accept=".csv">
-                </div>
-                <div class="form-group">
-                    <input id="upload-clients-button" type="submit" value="Upload CSV" class="button">
-                </div>
-            </form>
-            <a href="/download-client-template" class="btn btn-secondary" download>Download Template</a>
-        </div>
-    </div> -->
-    <!-- Contract Creation Modal -->
-    <div id="create-contract-modal" class="modal">
-        <div class="modal-content" style="width: 45%; margin-top: 1%;">
-            <span class="close">&times;</span>
-            <h2>Create New Contract</h2>
-            <form action="/create-contract" method="post" id="create-contract-form">
-                <div class="form-group">
-                    <label for="client_account_number">Client Name:</label>  
-                    <select name="client_account_number" id="client_account_number" required>
-                        <option value="">Select a client</option>
-                        {% for client in clients %}
-                            <option value="{{ client.account_number }}">{{ client.client_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="equipment">Equipment:</label>
-                    <select multiple name="equipment[]" id="equipment">
-                        <!-- Equipment options will be dynamically updated here -->
-                    </select>
-                </div>
-
-                <label for="job_type">Job Type:</label>
-                <select name="job_type" id="job_type" required>
-                    <option value="">Select a client</option>
-                    <option value="LOLER">LOLER</option>
-                    <option value="PUWER">PUWER</option>
-                </select>
-
-                <label for="start_date">Start Date:</label>
-                <input type="date" name="start_date" id="start_date" required>
-
-                <label for="contract_charge">Contract Charge:</label>
-                <input type="number" step="0.01" name="contract_charge" id="contract_charge" required>
-
-                <label for="billing_cycle">Billing Cycle:</label>
-                <select name="billing_cycle" id="billing_cycle" required>
-                    <option value="monthly">Monthly</option>
-                    <option value="quarterly">Quarterly</option>
-                    <option value="annually">Annually</option>
-                </select>
-
-                <input type="submit" value="Create Contract" class="button">
-            </form>
-        </div>
+            {% include 'header.html' %}
+            <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="modal" data-bs-target="#new-contract-modal" onclick="searchContracts()">New Contract</button>
+          </div>
+        </nav>
+    </div>
+    <div class="container" style="padding: 1.5%;">
+        .
     </div>
     <!-- Contracts Table -->
-    <div style="width: 95%; padding-top: 1%; margin: auto;">
-        <table id="contracts-table" style="width: 100%; margin-top: 10px;">
+    <div class="container-fluid">
+        <table id="contracts-table" class="table table-striped table-hover" style="cursor: pointer;">
             <thead>
                 <tr>
                     <th>Contract ID</th>
@@ -126,7 +37,80 @@
             </tbody>
         </table>
     </div>
-    <script>
+
+    <div class="modal fade" id="new-contract-modal" tabindex="-1" style="display: none;" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalToggleLabel">Create New Contract</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/create-contract" method="post" id="create-contract-form">
+
+                        <div class="mb-3 form-floating">
+                            <input name="client_account_number" class="form-control" list="datalistOptions" id="client_account_number" placeholder="Type to search...">
+                            <datalist id="datalistOptions">
+                            {% for client in clients %}
+                              <option value="{{ client.account_number }}">{{ client.account_number }}</option>
+                            {% endfor %} 
+                            </datalist>
+                            <label for="client_account_number">Client Account Number:</label>
+                        </div>
+                               
+                        <div class="mb-3 form-floating">
+                            <select name="job_type" id="job_type" class="form-select" aria-label="Select Contract Job Type" required>
+                                <option value="LOLER">LOLER</option>
+                                <option value="PUWER">PUWER</option>
+                            </select>
+                            <label for="job_type">Job Type:</label>
+                        </div>
+
+                        <div class="mb-3 form-floating">
+                            <input type="date" name="start_date" id="start_date" class="form-control" required>
+                            <label for="start_date">Start Date:</label>
+                        </div>
+
+                        <div class="mb-3 form-floating">
+                            <input type="text" name="contract_charge" id="contract_charge" class="form-control" required>
+                            <label for="contract_charge">Contract Charge:</label>
+                        </div>
+                        
+                        <div class="mb-3 form-floating">   
+                            <select name="billing_cycle" id="billing_cycle" class="form-select" required>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="annually">Annually</option>
+                            </select>
+                            <label for="billing_cycle">Billing Cycle:</label>
+                        </div>
+
+                        <div class="mb-3 form-floating">
+                            <select multiple name="equipment[]" id="equipment" class="form-select" style="height: 200px;">
+
+                            </select>
+                            <label for="equipment">Equipment:</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <select class="form-select" aria-label="Active Status" name="status" id="status">
+                                <option selected>Select Client Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Closed">Closed</option>
+                                <option value="Prospect">Prospect</option>
+                            </select>
+                            <label for="status">Status:</label>
+                        </div>
+                        <input type="submit" value="Create Contract" class="btn btn-primary">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
     $(document).ready(function() {
         // Event listener for client dropdown change
         $('#client_account_number').on('change', function() {
@@ -167,15 +151,6 @@
         $('#contracts-table').on('click', '.clickable-row', function() {
             window.location.href = $(this).data('href');
         });
-
-        // Event listener for opening and closing the contract creation modal
-        $('#create-contract-button').on('click', function() {
-            $('#create-contract-modal').show();
-        });
-        $('.close').on('click', function() {
-            $('.modal').hide();
-        });
     });
-    </script>
-</body>
+</script>
 </html>
