@@ -244,14 +244,6 @@ def save_client():
 
     return redirect('/clients')
 
-@app.route('/client-details/<account_number>')
-def client_details(account_number):
-    # Fetch client details for the specified account_number
-    client_details = get_client_details(account_number)  # Implement this function
-
-    # Render the client details page with the client_details data
-    return render_template('client_details.html', client_details=client_details)
-
 @app.route('/update-client', methods=['POST'])
 def update_client():
     if request.method == 'POST':
@@ -264,16 +256,18 @@ def update_client():
             town_city = request.form['town_city']
             county = request.form['county']
             postcode = request.form['postcode']
-            phone_number = request.form['phone_number']
             status = request.form['status']
+
+            # Print the received data for debugging
+            print(f"Received data: Account Number: {account_number}, Client Name: {client_name}, Address Line 1: {address_line_1}, Address Line 2: {address_line_2}, Town/City: {town_city}, County: {county}, Postcode: {postcode}, Status: {status}")
 
             # Update the client data in the database
             conn = get_db()
             conn.execute('''
                 UPDATE clients
-                SET client_name=?, address_line_1=?, address_line_2=?, town_city=?, county=?, postcode=?, phone_number=?, status=?
+                SET client_name=?, address_line_1=?, address_line_2=?, town_city=?, county=?, postcode=?, status=?
                 WHERE account_number=?
-            ''', (client_name, address_line_1, address_line_2, town_city, county, postcode, phone_number, status, account_number))
+            ''', (client_name, address_line_1, address_line_2, town_city, county, postcode,  status, account_number))
             conn.commit()
             conn.close()
 
@@ -282,6 +276,7 @@ def update_client():
         except Exception as e:
             error_message = str(e)
             session['error_message'] = error_message
+            print(f"Error updating client: {error_message}")
 
     return redirect('/clients')
 

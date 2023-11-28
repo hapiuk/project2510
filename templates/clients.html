@@ -15,6 +15,7 @@
                     <th sortable="true">Client Name</th>
                     <th sortable="true">Address</th>
                     <th sortable="true">Town/City</th>
+                    <th sortable="true">County</th>
                     <th sortable="true">Postcode</th>
                     <th sortable="true">Status</th>
                 </tr>
@@ -27,12 +28,14 @@
                     data-address-1="{{ client.address_line_1 }}" 
                     data-address-2="{{ client.address_line_2 }}"
                     data-town-city="{{ client.town_city }}" 
+                    data-county="{{ client.county }}" 
                     data-postcode="{{ client.postcode }}" 
                     data-status="{{ client.status }}">
                     <td>{{ client.account_number }}</td>
                     <td>{{ client.client_name }}</td>
                     <td>{{ client.address_line_1 }}, {{ client.address_line_2 }}</td>
                     <td>{{ client.town_city }}</td>
+                    <td>{{ client.county }}</td>
                     <td>{{ client.postcode }}</td>
                     <td>{{ client.status }}</td>
                 </tr>
@@ -64,7 +67,7 @@
                             <label for="address_line_1" class="form-label">Address Line 1:</label>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="text" class="form-control" name="address_line_2" id="address_line_2" required>
+                            <input type="text" class="form-control" name="address_line_2" id="address_line_2">
                             <label for="address_line_2" class="form-label">Address Line 2:</label>
                         </div>
                         <div class="form-floating mb-3">
@@ -139,76 +142,83 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="modal-client-name">
-                                <label for="modal-client-name">Client Name:</label>
+                    <form action="/update-client" method="post" enctype="multipart/form-data" id="update-client-form">
+                        <input type="hidden" name="account_number" id="hidden-account-number">
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-client-name" name="client_name">
+                                    <label for="modal-client-name">Client Name:</label>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="modal-address-1">
-                                <label for="modal-address-1">Address Line 1:</label>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-address-1" name="address_line_1">
+                                    <label for="modal-address-1">Address Line 1:</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-address-2" name="address_line_2">
+                                    <label for="modal-address-2">Address Line 2:</label>
+                                </div>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="modal-address-2">
-                                <label for="modal-address-2">Address Line 2:</label>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-town-city" name="town_city">
+                                    <label for="modal-town-city">Town/City:</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-county" name="county">
+                                    <label for="modal-postcode">County:</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-postcode" name="postcode">
+                                    <label for="modal-postcode">Postcode:</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" aria-label="Active Status" name="status" id="status">
+                                        <option value="Active">Active</option>
+                                        <option value="Closed">Closed</option>
+                                        <option value="Prospect">Prospect</option>
+                                    </select>
+                                    <label for="status">Status:</label>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="modal-town-city">
-                                <label for="modal-town-city">Town/City:</label>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-phone">
+                                    <label for="modal-phone">Contact Number:</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-email">
+                                    <label for="modal-email">Contact Email:</label>
+                                </div>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="modal-postcode">
-                                <label for="modal-postcode">Postcode:</label>
+                        <div class="row">
+                            <div class="col">
+                                <div id="map-container" style="height: 400px;"></div>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="form-floating mb-3">
-                                <select class="form-select" aria-label="Active Status" name="status" id="status">
-                                    <option value="Active">Active</option>
-                                    <option value="Closed">Closed</option>
-                                    <option value="Prospect">Prospect</option>
-                                </select>
-                                <label for="status">Status:</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="modal-phone">
-                                <label for="modal-phone">Contact Number:</label>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="modal-email">
-                                <label for="modal-email">Contact Email:</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col">
-                            <div id="map-container" style="height: 400px;"></div> <!-- Adjust size as needed -->
-                        </div>
-                    </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary">Contacts</button>
-                    <button type="button" class="btn btn-primary">Equipment</button>
-                    <button type="button" class="btn btn-primary">Jobs</button>
+                    <button type="button" class="btn btn-primary" id="submit-update-client-form">Submit</button>
                 </div>
             </div>
         </div>
@@ -241,12 +251,19 @@
         });
     }
 
+
+
     $(document).ready(function() {
         // Initialize DataTables on your clients table
         $('#clients-table').DataTable({
             searching: true,
             paging: true
             // Additional DataTable options can be added here
+        });
+
+        //Button changed location - JS to process submit button
+        $('#submit-update-client-form').click(function() {
+            $('#update-client-form').submit();
         });
 
         // Handle click on table rows
@@ -257,16 +274,19 @@
                 clientName: $(this).data('client-name'),
                 address1: $(this).data('address-1'),
                 address2: $(this).data('address-2'),
+                county: $(this).data('county'),
                 townCity: $(this).data('town-city'),
                 postcode: $(this).data('postcode'),
                 status: $(this).data('status'),
             };
 
             // Populate the modal with this data
+            $('#hidden-account-number').val(clientData.accountNumber)
             $('#modal-account-number').text(clientData.accountNumber);
             $('#modal-client-name').val(clientData.clientName);
             $('#modal-address-1').val(clientData.address1);
             $('#modal-address-2').val(clientData.address2);
+            $('#modal-county').val(clientData.county);
             $('#modal-town-city').val(clientData.townCity);
             $('#modal-postcode').val(clientData.postcode);
             $('#modal-status').val(clientData.status);
@@ -292,6 +312,8 @@
             };
             xhr.send(formData);
         });
+
+
     });
 </script>
 </html>
