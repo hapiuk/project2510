@@ -1,4 +1,5 @@
             {% include 'header.html' %}
+            <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDcE0Wdn-DfOd0E9c9nZ5S-Kk_4JqzCVvw&callback=initMap" async defer></script>
             <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="modal" data-bs-target="#new-client-modal" onclick="searchClients()">New Client</button>
           </div>
         </nav>
@@ -29,6 +30,8 @@
                     data-address-2="{{ client.address_line_2 }}"
                     data-town-city="{{ client.town_city }}" 
                     data-county="{{ client.county }}" 
+                    data-email="{{ client.email }}" 
+                    data-phone="{{ client.contact_number }}" 
                     data-postcode="{{ client.postcode }}" 
                     data-status="{{ client.status }}">
                     <td>{{ client.account_number }}</td>
@@ -53,7 +56,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="/save-client" method="post" id="add-client-form">
+                    <form action="/create-client" method="post" id="add-client-form">
                         <div class="form-floating mb-3">
                             <input type="text" class="form-control" name="account_number" id="account_number" required>
                             <label for="account_number">Account Number:</label>
@@ -199,20 +202,29 @@
                         <div class="row">
                             <div class="col">
                                 <div class="form-floating mb-3">
-                                    <input type="text" class="form-control" id="modal-phone">
+                                    <input type="text" class="form-control" id="modal-phone_number" name="phone_number">
                                     <label for="modal-phone">Contact Number:</label>
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="form-floating mb-3">
-                                    <input type="text" class="form-control" id="modal-email">
-                                    <label for="modal-email">Contact Email:</label>
+                                    <input type="email" class="form-control" id="email" name="email">
+                                    <label for="email" class="form-label">Contact Email:</label>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col">
-                                <div id="map-container" style="height: 400px;"></div>
+                                <div class="form-floating mb-3">
+                                    <div id="map-container" style="height: 400px;"></div>
+                                    <label class="form-label">Map</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="notes" style="height: 400px;"></textarea>
+                                    <label for="" class="form-label">Client Notes</label>
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -277,6 +289,8 @@
                 county: $(this).data('county'),
                 townCity: $(this).data('town-city'),
                 postcode: $(this).data('postcode'),
+                email: $(this).data('email'),
+                phone_number: $(this).data('phone_number'),
                 status: $(this).data('status'),
             };
 
@@ -289,6 +303,8 @@
             $('#modal-county').val(clientData.county);
             $('#modal-town-city').val(clientData.townCity);
             $('#modal-postcode').val(clientData.postcode);
+            $('#modal-email').text(clientData.email);
+            $('#modal-phone_number').val(clientData.phone_number);
             $('#modal-status').val(clientData.status);
 
             // Geocode address and show the modal
@@ -303,7 +319,7 @@
             event.preventDefault();
             var formData = new FormData(addClientForm);
             var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/save-client', true);
+            xhr.open('POST', '/create-client', true);
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4 && xhr.status === 200) {
                     // Handle the response here
