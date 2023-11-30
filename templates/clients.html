@@ -23,17 +23,17 @@
             </thead>
             <!-- Display clients from the database -->
             {% for client in clients %}
-                <tr class="clickable-row" 
-                    data-account-number="{{ client.account_number }}" 
-                    data-client-name="{{ client.client_name }}" 
-                    data-address-1="{{ client.address_line_1 }}" 
-                    data-address-2="{{ client.address_line_2 }}"
-                    data-town-city="{{ client.town_city }}" 
-                    data-county="{{ client.county }}" 
-                    data-email="{{ client.email }}" 
-                    data-phone="{{ client.contact_number }}" 
-                    data-postcode="{{ client.postcode }}" 
-                    data-status="{{ client.status }}">
+                <tr class="clickable-row"
+                data-account-number="{{ client.account_number }}"
+                data-client-name="{{ client.client_name }}"
+                data-address-1="{{ client.address_line_1 }}"
+                data-address-2="{{ client.address_line_2 }}"
+                data-town-city="{{ client.town_city }}"
+                data-county="{{ client.county }}"
+                data-email="{{ client.email }}"
+                data-phone="{{ client.phone_number }}"
+                data-postcode="{{ client.postcode }}"
+                data-status="{{ client.status }}">
                     <td>{{ client.account_number }}</td>
                     <td>{{ client.client_name }}</td>
                     <td>{{ client.address_line_1 }}, {{ client.address_line_2 }}</td>
@@ -208,7 +208,7 @@
                             </div>
                             <div class="col">
                                 <div class="form-floating mb-3">
-                                    <input type="email" class="form-control" id="email" name="email">
+                                    <input type="email" class="form-control" id="modal-email" name="email">
                                     <label for="email" class="form-label">Contact Email:</label>
                                 </div>
                             </div>
@@ -222,7 +222,7 @@
                             </div>
                             <div class="col">
                                 <div class="form-floating mb-3">
-                                    <textarea class="form-control" id="notes" style="height: 400px;"></textarea>
+                                    <textarea class="form-control" id="modal-notes" name="notes" style="height: 400px;"></textarea>
                                     <label for="" class="form-label">Client Notes</label>
                                 </div>
                             </div>
@@ -239,12 +239,13 @@
 
 </body>
 <script>
+
     let map;
 
     function initMap() {
         map = new google.maps.Map(document.getElementById('map-container'), {
-            center: { lat: -34.397, lng: 150.644 }, // Default location
-            zoom: 15
+            zoom: 15,
+            center: { lat: -34.397, lng: 150.644 } // Default location
         });
     }
 
@@ -258,11 +259,10 @@
                     position: results[0].geometry.location
                 });
             } else {
-                alert('Geocode was not successful for the following reason: ' + status);
+                console.log('Geocode error: ' + status);
             }
         });
     }
-
 
 
     $(document).ready(function() {
@@ -273,63 +273,72 @@
             // Additional DataTable options can be added here
         });
 
-        //Button changed location - JS to process submit button
+        // Handle click on table rows
+        $('#clients-table tbody').on('click', '.clickable-row', function() {
+            var accountNumber = $(this).data('account-number');
+
+            // Make AJAX request to get client details
+            $.ajax({
+                url: '/get-client/' + accountNumber,
+                type: 'GET',
+                success: function(data) {
+                    // Populate the modal with the data
+                    $('#hidden-account-number').val(data.account_number);
+                    $('#modal-account-number').text(data.account_number);
+                    $('#modal-client-name').val(data.client_name);
+                    $('#modal-address-1').val(data.address_line_1);
+                    $('#modal-address-2').val(data.address_line_2);
+                    $('#modal-town-city').val(data.town_city);
+                    $('#modal-county').val(data.county);
+                    $('#modal-postcode').val(data.postcode);
+                    $('#modal-email').val(data.email);
+                    $('#modal-phone_number').val(data.phone_number);
+                    $('#modal-notes').val(data.notes);
+                    $('#modal-status').val(data.status);
+                    
+                    // Show the modal
+                    $('#client-details-modal').modal('show');
+                },
+                error: function(error) {
+                    console.log('Error fetching client details: ', error);
+                }
+            });
+        });
+
+        // Submit the update client form
         $('#submit-update-client-form').click(function() {
             $('#update-client-form').submit();
         });
 
-        // Handle click on table rows
-        $('#clients-table tbody').on('click', '.clickable-row', function() {
-            // Extract client data from the clicked row
-            var clientData = {
-                accountNumber: $(this).data('account-number'),
-                clientName: $(this).data('client-name'),
-                address1: $(this).data('address-1'),
-                address2: $(this).data('address-2'),
-                county: $(this).data('county'),
-                townCity: $(this).data('town-city'),
-                postcode: $(this).data('postcode'),
-                email: $(this).data('email'),
-                phone_number: $(this).data('phone_number'),
-                status: $(this).data('status'),
-            };
 
-            // Populate the modal with this data
-            $('#hidden-account-number').val(clientData.accountNumber)
-            $('#modal-account-number').text(clientData.accountNumber);
-            $('#modal-client-name').val(clientData.clientName);
-            $('#modal-address-1').val(clientData.address1);
-            $('#modal-address-2').val(clientData.address2);
-            $('#modal-county').val(clientData.county);
-            $('#modal-town-city').val(clientData.townCity);
-            $('#modal-postcode').val(clientData.postcode);
-            $('#modal-email').text(clientData.email);
-            $('#modal-phone_number').val(clientData.phone_number);
-            $('#modal-status').val(clientData.status);
+        $('#submit-update-client-form').click(function() {
+            var formData = new FormData($('#update-client-form')[0]);
 
-            // Geocode address and show the modal
-            var fullAddress = clientData.address1 + ' ' + clientData.address2 + ' ' + clientData.townCity + ' ' + clientData.postcode;
-            geocodeAddress(fullAddress);
-            $('#client-details-modal').modal('show');
-        });
-
-        // Add client form submission
-        var addClientForm = document.getElementById('add-client-form');
-        addClientForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            var formData = new FormData(addClientForm);
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/create-client', true);
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    // Handle the response here
-                    // Potentially reload the page or update the table to show the new client
+            $.ajax({
+                url: '/update-client',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    // Handle success - e.g., close modal, show success message
+                    $('#client-details-modal').modal('hide');
+                    alert(response.message);  // Display success message
+                    // Refresh the clients table if needed
+                },
+                error: function(xhr) {
+                    // Handle error
+                    alert('Error updating client: ' + xhr.responseJSON.error);
                 }
-            };
-            xhr.send(formData);
+            });
         });
 
 
+
+        $('#client-details-modal').on('shown.bs.modal', function () {
+            var fullAddress = $('#modal-address-1').val() + ' ' + $('#modal-address-2').val() + ' ' + $('#modal-town-city').val() + ' ' + $('#modal-postcode').val();
+            geocodeAddress(fullAddress);
+        }); 
     });
 </script>
 </html>

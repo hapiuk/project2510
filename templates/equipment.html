@@ -22,7 +22,7 @@
             </thead>
             <!-- Display equipment from the database -->
             {% for equip in equipment %}
-                <tr class="clickable-row" data-href="{{ url_for('equipment_details', equipment_number=equip.equipment_number) }}">
+                <tr class="clickable-row">
                     <td>{{ equip.equipment_number }}</td>
                     <td>{{ equip.client_name }}</td>
                     <td>{{ equip.equipment_type }}</td>
@@ -82,6 +82,105 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="equipment-details-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Equipment Details: <span id="modal-equipment-number"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/update-client" method="post" enctype="multipart/form-data" id="update-client-form">
+                        <input type="hidden" name="account_number" id="hidden-account-number">
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-client-name" name="client_name">
+                                    <label for="modal-client-name">Client Name:</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-address-1" name="address_line_1">
+                                    <label for="modal-address-1">Address Line 1:</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-address-2" name="address_line_2">
+                                    <label for="modal-address-2">Address Line 2:</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-town-city" name="town_city">
+                                    <label for="modal-town-city">Town/City:</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-county" name="county">
+                                    <label for="modal-postcode">County:</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-postcode" name="postcode">
+                                    <label for="modal-postcode">Postcode:</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" aria-label="Active Status" name="status" id="status">
+                                        <option value="Active">Active</option>
+                                        <option value="Closed">Closed</option>
+                                        <option value="Prospect">Prospect</option>
+                                    </select>
+                                    <label for="status">Status:</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="modal-phone_number" name="phone_number">
+                                    <label for="modal-phone">Contact Number:</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <input type="email" class="form-control" id="email" name="email">
+                                    <label for="email" class="form-label">Contact Email:</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <div id="map-container" style="height: 400px;"></div>
+                                    <label class="form-label">Map</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="notes" style="height: 400px;"></textarea>
+                                    <label for="" class="form-label">Client Notes</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="submit-update-client-form">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>  
 </body>
 <script>
     document.addEventListener("DOMContentLoaded", function() {

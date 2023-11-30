@@ -23,7 +23,7 @@
             </thead>
             <tbody>
                 {% for contract in contracts %}
-                <tr class="clickable-row" data-href="{{ url_for('contract_details', contract_id=contract.id) }}">
+                <tr class="clickable-row">
                     <td>{{ contract.id }}</td>
                     <td>{{ contract.client_name }}</td>
                     <td>{{ contract.job_type }}</td>

@@ -12,7 +12,6 @@ import zipfile
 import sqlite3
 import shutil
 from datetime import datetime, timedelta
-import calendar
 from modules.database.database import db_blueprint, get_db, get_all_clients
 from modules.clients.clients import clients_blueprint
 from modules.equipment.equipment import equipment_blueprint
