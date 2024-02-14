@@ -176,7 +176,10 @@ def equipment():
         'equipment.html',
         equipment=equipment,
         clients=clients,
-        search_query=search_query
+        search_query=search_query,
+        title='Equipment', 
+        buttonName='Add Equipment', 
+        buttonTarget='new-equipment-modal'
     )
 
 

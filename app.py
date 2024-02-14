@@ -31,7 +31,7 @@ app.register_blueprint(jobs_blueprint)
 
 @app.route('/', methods=['GET'])
 def root():
-    return render_template('index.html')
+    return render_template('index.html', title='Dashboard')
 
 if __name__ == "__main__":
     import socket

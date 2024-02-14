@@ -13,7 +13,7 @@ def contracts():
     contracts = get_all_contracts()  # Fetch all contracts from the database
     clients = get_all_clients()  # Fetch all clients
     equipment = get_equipment_list()  # Fetch all equipment
-    return render_template('contracts.html', contracts=contracts, clients=clients, equipment=equipment)
+    return render_template('contracts.html', contracts=contracts, clients=clients, equipment=equipment, title='Contracts', buttonName='Add Contract', buttonTarget='new-contract-modal')
 
 @contracts_blueprint.route('/create-contract', methods=['POST'])
 def create_contract():

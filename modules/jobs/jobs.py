@@ -11,7 +11,7 @@ def jobs():
     contracts = get_all_contracts()  # Fetch all contracts from the database
     clients = get_all_clients()  # Fetch all clients
     equipment = get_equipment_list()  # Fetch all equipment
-    return render_template('jobs.html')
+    return render_template('jobs.html', title='Tasks', buttonName='Add Task', buttonTarget='add-task-modal')
 
 def get_all_jobs():
     conn = get_db()

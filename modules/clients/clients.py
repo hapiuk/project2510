@@ -31,7 +31,7 @@ def clients():
         ''').fetchall()
 
     conn.close()
-    return render_template('clients.html', clients=clients, success_message=success_message, error_message=error_message)
+    return render_template('clients.html', clients=clients, success_message=success_message, error_message=error_message, title='Clients', buttonName='Add Client', buttonTarget='new-client-modal')
 
 @clients_blueprint.route('/create-client', methods=['POST'])
 def create_client():

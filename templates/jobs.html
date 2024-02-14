@@ -1,36 +1,524 @@
-            {% include 'header.html' %}
-            <button class="btn btn-outline-success me-2" type="button" data-bs-toggle="modal" data-bs-target="#new-job-modal">New Job</button>
-          </div>
-        </nav>
-    </div>
-    <div class="container" style="padding: 1.5%;">
-        .
-    </div>
-    <!-- Jobs Table -->
-    <div class="container-fluid">
-        <!-- Jobs Table Here -->
-    </div>
+{% include 'header.html' %}
+<div class="container-fluid mt-3">
+    <table class="table table-striped table-hover" style="cursor: pointer;" id="tasks-table">
+        <thead>
+            <tr>
+                <th>Task Number</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Assignee</th>
+                <th>Due Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr class="clickable-row" 
+                data-task-id="{{ task.id }}" 
+                data-status-id="{{ task.statusId }}"
+                data-priority-id="{{ task.priorityId }}"
+                data-assignee-id="{{ task.assigneeId }}" 
+                data-title="{{ task.title }}"
+                data-description="{{ task.description }}" 
+                data-status="{{ task.status }}" 
+                data-priority="{{ task.priority }}" 
+                data-assignee-name="{{ task.assignee_name }}" 
+                data-reporter-name="{{ task.reporter_id }}" 
+                data-due-date="{{ task.due_date }}"
+                data-created-at="{{ task.created_at }}">
+                <td>{{ task.id }}</td>
+                <td>{{ task.title }}</td>
+                <td>{{ task.status }}</td> 
+                <td>{{ task.priority_name }}</td>
+                <td>{{ task.assignee_name }}</td>
+                <td>{{ task.due_date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
 
-    <!-- Modals -->
-
-    <div class="modal fade" id="new-job-modal" aria-hidden="true" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
+<!-- Task Details and Comments Modal -->
+<div class="modal fade" id="task-details-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Create New Job</h1>
+                <h5 class="modal-title">Task Number: <span id="task-id-display"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <!-- Job creation form here -->
-            </div>
-            <div class="modal-footer">
-                <!-- Form submition button here -->
-            </div>
+                
+                <div class="container text-center">
+                    <div class="row">
+                        <div class="col order-first">
+                            <div class="row">
+                                <div class="col">
+                                    <form id="update-task-form">
+                                        <input type="hidden" id="modal-task-id" value="">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" id="task-title" name="taskTitle">
+                                            <label for="taskTitle">Subject:</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <textarea class="form-control" id="task-description" name="taskDescription" rows="4"></textarea>
+                                            <label for="taskDescription">Description:</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <select class="form-select" id="task-status" name="taskStatus">
+                                                <!-- Leave Clear for population -->
+                                            </select>
+                                            <label for="taskStatus">Status:</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <select class="form-select" id="task-priority" name="taskPriority">
+                                                <!-- Leave Clear for population -->
+                                            </select>
+                                            <label for="taskPriority">Priority:</label>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="form-floating mb-3">
+                                                    <select class="form-select" id="task-assignee" name="assigneeId">
+                                                        <!-- Options will be dynamically added here -->
+                                                    </select>
+                                                    <label for="assigneeId">Assigned To:</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" class="form-control" id="task-reportername" name="taskReportername">
+                                                    <label for="taskReportername">Logged By:</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="date" class="form-control" id="task-duedate" name="taskDuedate">
+                                            <label for="taskDuedate">Task Due:</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" id="date-stamp" name="dateStamp" readonly>
+                                            <label for="dateStamp">Task Logged:</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <button type="submit" class="btn btn-primary" style="width: 100%;">Update Task</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col order-last">
+                            <form id="add-comment-form">
+                                <input type="hidden" id="comment-task-id" name="task_id">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="comment-employee-id" name="employee_id">
+                                        <!-- Employee options will be dynamically added here -->
+                                    </select>
+                                    <label for="comment-employee-id">Comment As:</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="comment-text" placeholder="Add new comment..." name="comment-text" rows="8"></textarea>
+                                    <label for="comment-text">New Comment</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Comment</button>
+                            </form>
+                            <div class="form-floating mb-3 overflow-auto">
+                                <ul id="task-comments-list" class="list-unstyled">
+                                    <!-- Comments will be listed here -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+               </div>
             </div>
         </div>
     </div>
+</div>
 
-</body>
+<!-- Add New Task Modal -->
+<div class="modal fade" id="add-task-modal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTaskModalLabel">Add New Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-task-form">
+                    <div class="mb-3">
+                        <label for="new-task-title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="new-task-title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-task-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="new-task-description" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-task-status" class="form-label">Status</label>
+                        <select class="form-select" id="new-task-status" name="status">
+                            <!-- Status options will be dynamically loaded here -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-task-priority" class="form-label">Priority</label>
+                        <select class="form-select" id="new-task-priority" name="priority">
+                            <!-- Priority options will be dynamically loaded here -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-task-assignee" class="form-label">Assignee</label>
+                        <select class="form-select" id="new-task-assignee" name="assignee">
+                            <!-- Assignee options will be dynamically loaded here -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-task-due-date" class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="new-task-due-date" name="dueDate">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Create Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+                                
 <script>
+$(document).ready(function () {
+    $('#tasks-table').DataTable({
+        searching: true,
+        paging: true,
+    });
+
+    function populateDropdowns() {
+        fetch('/get-task-statuses')
+            .then(response => response.json())
+            .then(data => {
+                const statusDropdown = document.getElementById('new-task-status');
+                data.forEach(status => {
+                    const option = new Option(status.status, status.id);
+                    statusDropdown.add(option);
+                });
+            });
+
+        fetch('/get-task-priorities')
+            .then(response => response.json())
+            .then(data => {
+                const priorityDropdown = document.getElementById('new-task-priority');
+                data.forEach(priority => {
+                    const option = new Option(priority.priority, priority.id);
+                    priorityDropdown.add(option);
+                });
+            });
+
+        fetch('/get-employees')
+            .then(response => response.json())
+            .then(data => {
+                const assigneeDropdown = document.getElementById('new-task-assignee');
+                data.forEach(assignee => {
+                    const option = new Option(assignee.name, assignee.id);
+                    assigneeDropdown.add(option);
+                });
+            });
+    }
+
+    // Call the function when the modal is shown
+    document.getElementById('add-task-modal').addEventListener('show.bs.modal', populateDropdowns);
+
+
+    // Function to handle form submission
+    document.getElementById('add-task-form').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        // Create FormData object to collect form data
+        const formData = new FormData(this);
+
+        // Send form data to the backend
+        fetch('/add-task', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                // Reset form after successful submission
+                this.reset();
+                // Close the modal
+                $('#add-task-modal').modal('hide');
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Task added successfully!',
+                    showConfirmButton: false,
+                    timer: 1500,
+                }).then(() => {
+                    // Redirect to task.html page
+                    window.location.href = '/tasks';
+                });
+            } else {
+                // Handle error response
+                return response.json().then(data => {
+                    throw new Error(data.error);
+                });
+            }
+        })
+        .catch(error => {
+            // Handle error
+            console.error('Error:', error.message);
+            // Show error message
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: error.message
+            });
+        });
+    });
+
+ 
+    $('#tasks-table tbody').on('click', '.clickable-row', function () {
+        const taskData = $(this).data();
+        console.log("Clicked task data:", taskData);
+
+        // Populate the modal fields with values from data attributes
+        $('#task-id-display').text(taskData.taskId);
+        $('#modal-task-id').val(taskData.taskId);
+        $('#task-title').val(taskData.title);
+        $('#task-description').val(taskData.description);
+        $('#task-assignee').val(taskData.assigneeName);
+        $('#task-reportername').val(taskData.reporterName);
+        $('#task-duedate').val(taskData.dueDate);
+        $('#date-stamp').val(taskData.createdAt);
+
+        // Log the task status ID before calling loadTaskStatuses()
+        console.log("Task Status ID:", taskData.statusId);
+        console.log("Task Priority ID:", taskData.priorityId);
+        console.log("Task Assignee ID:", taskData.assigneeId);
+
+        // Load segments for this task
+        loadComments(taskData.taskId);
+        loadTaskStatuses(taskData.statusId);
+        loadTaskPriorities(taskData.priorityId);
+        loadAssignees(taskData.assigneeId);
+
+
+        // Set the taskId as a data attribute on the modal
+        $('#task-details-modal').data('task-id', taskData.taskId);
+        
+        // Show the modal
+        $('#task-details-modal').modal('show');
+    });
+
+
+
+
+    function loadTaskStatuses(taskStatusID) {
+        $.ajax({
+            url: '/get-task-statuses',
+            type: 'GET',
+            success: function(response) {
+                console.log("Received task statuses:", response);  // Log the response to see what we got back
+                var select = $('#task-status');
+                select.empty();  // Clear existing options
+                response.forEach(function(status) {
+                    var option = $('<option></option>').attr('value', status.id).text(status.status);
+                    if (status.id === taskStatusID) {
+                        option.prop('selected', true);  // Set selected option
+                    }
+                    select.append(option);
+                    console.log("Setting selected status value to:", option);
+                });
+            },
+            error: function(error) {
+                console.error('Error fetching task statuses:', error);
+            }
+        });
+    }
+
+    function loadTaskPriorities(taskPriorityID) {
+        $.ajax({
+            url: '/get-task-priorities',
+            type: 'GET',
+            success: function(response) {
+                console.log("Received task priority:", response);  // Log the response to see what we got back
+                var select = $('#task-priority');
+                select.empty();  // Clear existing options
+                response.forEach(function(priority) {
+                    var option = $('<option></option>').attr('value', priority.id).text(priority.priority);
+                    if (priority.id === taskPriorityID) {
+                        option.prop('selected', true);  // Set selected option
+                    }
+                    select.append(option);
+                    console.log("Setting selected priority value to:", option);
+                });
+            },
+            error: function(error) {
+                console.error('Error fetching task priority:', error);
+            }
+        });
+    }
+
+    function loadAssignees(selectedAssigneeId = '') {
+        $.ajax({
+            url: '/get-employees',
+            type: 'GET',
+            success: function(response) {
+                console.log("Received assignees:", response);  // Log for debugging
+                var select = $('#task-assignee');
+                select.empty();  // Clear existing options
+                response.forEach(function(employee) {
+                    var option = $('<option></option>').attr('value', employee.id).text(employee.name);
+                    if (employee.id.toString() === selectedAssigneeId.toString()) {
+                        option.prop('selected', true);  // Set selected option if it matches
+                    }
+                    select.append(option);
+                });
+            },
+            error: function(error) {
+                console.error('Error fetching assignees:', error);
+            }
+        });
+    }
+
+    function loadEmployees() {
+        $.ajax({
+            url: '/get-employees', // Adjust this URL to your endpoint for fetching employees
+            type: 'GET',
+            success: function(response) {
+                var select = $('#comment-employee-id');
+                select.empty(); // Clear existing options
+                response.forEach(function(employee) {
+                    var option = $('<option></option>').attr('value', employee.id).text(employee.name);
+                    select.append(option);
+                });
+            },
+            error: function(error) {
+                console.error('Error fetching employees:', error);
+            }
+        });
+    }
+
+    // Call loadEmployees when the document is ready or when the modal opens
+    $(document).ready(function() {
+        loadEmployees(); // If the dropdown should be populated when the page loads
+    });
+
+
+    function loadComments(taskId) {
+        console.log("Loading comments for task ID:", taskId); // Debugging
+        $.ajax({
+            url: `/get-comments/${taskId}`,
+            type: 'GET',
+            success: function(response) {
+                $('#task-comments-list').empty(); // Clear existing comments first
+                
+                if (Array.isArray(response)) {
+                    response.forEach(function(comment) {
+                        $('#task-comments-list').append(`<li><div class="card" style="width: 100%; margin-top:0.5em;"><div class="card-body"><p class="card-text">${comment.comment}</p></div><div class="card-footer text-body-secondary">Posted By: ${comment.commenter_name} @ ${comment.created_at}</div></li>`);
+                    });
+                } else if (response.comments && Array.isArray(response.comments)) {
+                    response.comments.forEach(function(comment) {
+                        $('#task-comments-list').append(`<li><div class="card" style="width: 100%; margin-top:0.5em;"><div class="card-body"><p class="card-text">${comment.comment}</p></div><div class="card-footer text-body-secondary">Posted By: ${comment.commenter_name} @ ${comment.created_at}</div></li>`);
+                    });
+                } else {
+                    console.error('Invalid response format:', response);
+                }
+            },
+            error: function(error) {
+                console.error('Error loading comments:', error);
+            }
+        });
+    }
+
+
+    $('#add-comment-form').submit(function(e) {
+        e.preventDefault();
+        const taskId = $('#task-details-modal').data('task-id'); // Assuming this is correct
+        const commentText = $('#comment-text').val();
+        const employeeId = $('#comment-employee-id').val(); // Make sure this line correctly retrieves the selected employee ID
+
+        $.ajax({
+            url: '/add-comment',
+            type: 'POST',
+            data: JSON.stringify({
+                'task_id': taskId,
+                'comment': commentText,
+                'commenter_id': employeeId, // Ensure this is correctly sent
+            }),
+            contentType: 'application/json; charset=utf-8',
+            success: function(response) {
+                // Handle success
+                $('#comment-text').val(''); // Clear the textarea
+                loadComments(taskId); // Reload or refresh comments to show the new one
+            },
+            error: function(error) {
+                console.error('Error adding comment:', error);
+                // Handle error
+            }
+        });
+    });
+
+
+    $('#update-task-form').submit(function(e) {
+        e.preventDefault(); // Prevent the default form submission behavior
+
+        const taskId = $('#modal-task-id').val(); // Assuming this hidden input holds the current task ID
+        const updateData = {
+            title: $('#task-title').val(), // Capture the title from the input
+            description: $('#task-description').val(),
+            status: $('#task-status').val(),
+            priority: $('#task-priority').val(),
+            assigneeId: $('#task-assignee').val(),
+            dueDate: $('#task-duedate').val(),
+            // Add other fields as necessary
+        };
+
+        $.ajax({
+            url: `/update-task/${taskId}`, // Make sure this matches your Flask route
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(updateData),
+            success: function(response) {
+                alert('Task updated successfully');
+                // Close the modal, refresh the page, or update the UI as needed
+                $('#task-details-modal').modal('hide');
+                location.reload();
+            },
+            error: function(xhr, status, error) {
+                console.error('Error updating task:', error);
+                alert('Failed to update task. Please try again.');
+            }
+        });
+    });
+});
+
+function toggleTheme() {
+    var currentTheme = document.documentElement.getAttribute('data-bs-theme');
+    var newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-bs-theme', newTheme);
+    localStorage.setItem('theme', newTheme); // Save theme preference
+}
+
+// Event listener for the toggle button
+document.getElementById('btnSwitch').addEventListener('click', toggleTheme);
+
+// Apply saved theme on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    }
+});
 </script>
+
 </html>
