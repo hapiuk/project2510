@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for
+from flask_login import LoginManager, login_user, logout_user, login_required
 import sqlite3
 from datetime import datetime
 from modules.database.database import db_blueprint, get_db, get_all_clients
@@ -128,6 +129,7 @@ def insert_equipment(equipment_number, client_account_number, equipment_type, eq
 
 
 @equipment_blueprint.route('/update-equipment', methods=['POST'])
+
 def update_equipment():
     if request.method == 'POST':
         equipment_number = request.form.get('equipment_number')
@@ -163,6 +165,7 @@ def update_equipment():
     return redirect('/equipment')
 
 @equipment_blueprint.route('/equipment')
+@login_required
 def equipment():
     equipment = get_equipment_list()
     clients = get_all_clients()

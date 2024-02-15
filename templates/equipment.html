@@ -1,31 +1,37 @@
-    {% include 'header.html' %}
-    <div class="container-fluid">
-        <table id="equipment-table" class="table table-striped table-hover" style="cursor: pointer;">
-            <thead>
-                <tr>
-                    <th>Asset Number</th>
-                    <th>Client</th>
-                    <th>Equipment Type</th>
-                    <th>Equipment Sub Type</th>
-                    <th>Serial Number</th>
-                    <th>Client Asset ID</th>
-                    <th>Sub Location</th>
-                </tr>
-            </thead>
-            <!-- Display equipment from the database -->
-            {% for equip in equipment %}
-                <tr class="clickable-row">
-                    <td>{{ equip.equipment_number }}</td>
-                    <td>{{ equip.client_name }}</td>
-                    <td>{{ equip.equipment_type }}</td>
-                    <td>{{ equip.equipment_sub_type }}</td>
-                    <td>{{ equip.serial_number }}</td>
-                    <td>{{ equip.client_asset_id }}</td>
-                    <td>{{ equip.sub_location }}</td>
-                </tr>
-            {% endfor %}
-        </table>
+{% include 'header.html' %}
+<div class="container-fluid mt-3">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        
+        <button type="button" data-bs-toggle="modal" data-bs-target="#{{ buttonTarget }}" class="btn btn-outline-success">{{ buttonName }}</button>
     </div>
+    <table id="equipment-table" class="table table-striped table-hover" style="cursor: pointer;">
+        <thead>
+            <tr>
+                <th>Asset Number</th>
+                <th>Client</th>
+                <th>Equipment Type</th>
+                <th>Equipment Sub Type</th>
+                <th>Serial Number</th>
+                <th>Client Asset ID</th>
+                <th>Sub Location</th>
+            </tr>
+        </thead>
+        <!-- Display equipment from the database -->
+        {% for equip in equipment %}
+            <tr class="clickable-row">
+                <td>{{ equip.equipment_number }}</td>
+                <td>{{ equip.client_name }}</td>
+                <td>{{ equip.equipment_type }}</td>
+                <td>{{ equip.equipment_sub_type }}</td>
+                <td>{{ equip.serial_number }}</td>
+                <td>{{ equip.client_asset_id }}</td>
+                <td>{{ equip.sub_location }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
 
     <!-- Modals -->
 

@@ -16,11 +16,12 @@ def create_user_table():
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
             first_name TEXT NOT NULL,
             second_name TEXT,
-            type TEXT,
-            date_stamp TEXT
+            email_address TEXT UNIQUE
         )
     ''')
     conn.commit()

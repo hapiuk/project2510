@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for
+from flask_login import LoginManager, login_user, logout_user, login_required
 from datetime import datetime
 from modules.database.database import db_blueprint, get_db, get_all_clients, get_all_contracts
 from modules.equipment.equipment import get_equipment_list
@@ -9,6 +10,7 @@ contracts_blueprint = Blueprint('contracts_blueprint', __name__)
 
 
 @contracts_blueprint.route('/contracts')
+@login_required
 def contracts():
     contracts = get_all_contracts()  # Fetch all contracts from the database
     clients = get_all_clients()  # Fetch all clients
