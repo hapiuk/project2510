@@ -46,9 +46,10 @@ def add_default_user():
     conn.close()
 
 class User(UserMixin):
-    def __init__(self, id, username, first_name, second_name):
+    def __init__(self, id, username, password_hash, first_name, second_name):
         self.id = id
         self.username = username
+        self.password_hash = password_hash
         self.first_name = first_name
         self.second_name = second_name
 
@@ -56,21 +57,24 @@ class User(UserMixin):
     def get(user_id):
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute('SELECT id, username, first_name, second_name FROM users WHERE id = ?', (user_id,))
+        cursor.execute('SELECT id, username, password_hash, first_name, second_name FROM users WHERE id = ?', (user_id,))
         user = cursor.fetchone()
         if user:
-            return User(user['id'], user['username'], user['first_name'], user['second_name'])
+            # Make sure to pass all required arguments, including 'second_name'
+            return User(user['id'], user['username'], user['password_hash'], user['first_name'], user['second_name'])
         return None
+
 
     @staticmethod
     def get_by_username(username):
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute('SELECT id, username, first_name, second_name FROM users WHERE username = ?', (username,))
+        cursor.execute('SELECT id, username, password_hash, first_name, second_name FROM users WHERE username = ?', (username,))
         user = cursor.fetchone()
         if user:
-            return User(user['id'], user['username'], user['first_name'], user['second_name'])
+            return User(user['id'], user['username'], user['password_hash'], user['first_name'], user['second_name'])
         return None
+
 
 
 
