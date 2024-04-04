@@ -60,16 +60,16 @@
         </div>
         <div class="col-2">
             <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
-                <div class="card-header">Equipment Inspected:</div>
+                <div class="card-header">Total Defective Equipment:</div>
                     <div class="card-body">
                     <h5 class="card-title">0</h5>
                     <p class="card-text"></p>
                 </div>
             </div>
             <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
-                <div class="card-header">Sites Inspected:</div>
+                <div class="card-header">Average Process Time:</div>
                     <div class="card-body">
-                    <h5 class="card-title">{{ unique_site_count }}</h5>
+                    <h5 class="card-title">0</h5>
                     <p class="card-text"></p>
                 </div>
             </div>
@@ -86,21 +86,21 @@
             <div class="card text-bg-success mb-3" style="max-width: 18rem;">
                 <div class="card-header">Assets with C Defects:</div>
                 <div class="card-body">
-                    <h5 class="card-title">0</h5>
+                    <h5 class="card-title">{{ moderate_count }}</h5>
                     <p class="card-text"></p>
                 </div>
             </div>
             <div class="card text-bg-warning mb-3" style="max-width: 18rem;">
                 <div class="card-header">Assets with B Defects:</div>
                 <div class="card-body">
-                    <h5 class="card-title">0</h5>
+                    <h5 class="card-title">{{ substantial_count }}</h5>
                     <p class="card-text"></p>
                 </div>
             </div>
             <div class="card text-bg-danger mb-3" style="max-width: 18rem;">
                 <div class="card-header">Assets with A Defects:</div>
                 <div class="card-body">
-                    <h5 class="card-title">0</h5>
+                    <h5 class="card-title">{{ intolerable_count }}</h5>
                     <p class="card-text"></p>
                 </div>
             </div>

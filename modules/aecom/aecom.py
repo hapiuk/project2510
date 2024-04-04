@@ -5,6 +5,8 @@ from datetime import datetime
 from modules.database.database import db_blueprint, get_db, get_all_clients, get_client_details
 from PyPDF2 import PdfMerger
 
+import logging
+
 import zipfile
 import shutil
 import os
@@ -21,6 +23,26 @@ OUTPUT_FOLDER = './output'
 PROCESSED_FOLDER = './processed'
 TEMP_DOWNLOAD_FOLDER = './output'
 ALLOWED_EXTENSIONS = {'pdf'}
+
+def count_severity_levels(get_db):
+    # Connect to the database
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        # Count occurrences of each severity level
+        cursor.execute("SELECT COUNT(*) FROM aecom_inspection WHERE priority = 'Moderate'")
+        moderate_count = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM aecom_inspection WHERE priority = 'Substantial'")
+        substantial_count = cursor.fetchone()[0]
+
+        cursor.execute("SELECT COUNT(*) FROM aecom_inspection WHERE priority = 'Intolerable'")
+        intolerable_count = cursor.fetchone()[0]
+
+        return moderate_count, substantial_count, intolerable_count
+    finally:
+        conn.close()
 
 @aecom_blueprint.route('/aecom', methods=['GET', 'POST'])
 @login_required
@@ -78,8 +100,9 @@ def aecom():
             return redirect(url_for('aecom_blueprint.aecom'))
 
         except Exception as e:
-            print(f"Error processing files: {str(e)}")
-            return redirect(url_for('aecom_blueprint.aecom'))
+            error_message = f"Error processing files: {str(e)}, business_entity: {business_entity}, invoice_group: {invoice_group}, invoice_value: {invoice_value}"
+            print(error_message)
+            raise
 
     # Fetch data from aecom_reports table
     conn = get_db()
@@ -99,8 +122,14 @@ def aecom():
     for entity, site in entity_site_mapping:
         entity_to_site[entity] = site
 
+    # Count occurrences of each severity level
+    moderate_count, substantial_count, intolerable_count = count_severity_levels(get_db)
+
+    print(f"Moderate Count: {moderate_count}")
+
     conn.close()
-    return render_template('aecom.html', aecom_reports=aecom_reports, aecom_sites=aecom_sites, unique_site_count=unique_site_count, entity_to_site=entity_to_site, total_invoice_value=total_invoice_value)
+
+    return render_template('aecom.html', aecom_reports=aecom_reports, aecom_sites=aecom_sites, unique_site_count=unique_site_count, entity_to_site=entity_to_site, total_invoice_value=total_invoice_value, moderate_count=moderate_count, substantial_count=substantial_count, intolerable_count=intolerable_count)
 
 
 def clear_input_folder(upload_folder):
@@ -303,21 +332,13 @@ def process_puwer_documents(input_folder, output_folder, processed_folder, busin
 
         # Write the first row of headers for both CSV files
         csvwriter.writerow(header)
-        
+        csv_additional_writer.writerow(header)
+
         # Write the secondary header for the main CSV file
         csvwriter.writerow(secondary_header_main)
         
         # Write the secondary header for the additional CSV file
         csv_additional_writer.writerow(secondary_header_additional)
-
-        # Extract job_no from the Inspection Ref / Job No
-        job_no = information["Inspection Ref No"].split("-")[-1]
-        
-        # Write the second row with additional information for both CSV files
-        additional_info, additional_info_secondary = extract_additional_information(text, business_entity, date_str)
-        csv_additional_writer.writerow(additional_info_secondary.values())
-
-        csv_additional_writer.writerow(additional_info.values())
 
         for pdf_path in processed_pdfs:
             text = extract_text_from_pdf(pdf_path)
@@ -325,56 +346,73 @@ def process_puwer_documents(input_folder, output_folder, processed_folder, busin
             if information["Priority"] in ["Intolerable", "Substantial", "Moderate"]:
                 row = [information[key] for key in header]
                 csvwriter.writerow(row)
-                
-        if additional_info_for_db is not None:
-            # Pass only the first dictionary of the tuple to db_insert_function
-            db_insert_function(additional_info_for_db, get_db, invoice_group, invoice_value)
+
+                # Move the db_insert_function call here to ensure 'information' is defined
+                if additional_info_for_db is not None:
+                    db_insert_function(information, additional_info_for_db, get_db, invoice_group, invoice_value)
 
     return main_merged_pdf_path, faulty_reports_path, csv_file, csv_additional_file, first_report_date, date_str, additional_info_for_db
 
-def db_insert_function(info, additional_info, get_db, invoice_group):
+def db_insert_function(info, additional_info, get_db, invoice_group, invoice_value):
     conn = get_db()
     try:
-        # Insert data into 'aecom_inspection' table
-        inspection_data = (
-            info["Inspection Ref No"],
-            info["Remedial Reference Number"],
-            info["Action Owner"],
-            info["Date Action Raised"],
-            info["Corrective Job Number"],
-            info["Remedial Works Action Required Notes"],
-            info["Priority"],
-            info["Target Completion Date"],
-            info["Actual Completion Date"],
-            info["Property Inspection Ref No"],
-            info["Compliance or Asset Type_External Ref No"],
-            info["Property_Business Entity"],
-            info["Logged By"]
-        )
+
+        print("Inserting into aecom_inspection")
+
+        # Ensure info is a dictionary
+        if isinstance(info, dict):
+            # Insert data into 'aecom_inspection' table
+            inspection_data = (
+                info.get("Inspection Ref No", ""),
+                info.get("Remedial Reference Number", ""),
+                info.get("Action Owner", ""),
+                info.get("Date Action Raised", ""),
+                info.get("Corrective Job Number", ""),
+                info.get("Remedial Works Action Required Notes", ""),
+                info.get("Priority", ""),
+                info.get("Target Completion Date", ""),
+                info.get("Actual Completion Date", ""),
+                info.get("Property Inspection Ref No", ""),
+                info.get("Compliance or Asset Type_External Ref No", ""),
+                info.get("Property_Business Entity", ""),
+            )
+
+        else:
+
+            print("Error: 'info' object is not a dictionary.")
+
         conn.execute('''
             INSERT INTO aecom_inspection 
             (inspection_ref, remedial_reference_number, action_owner, data_action_raised, 
             corrective_job_number, actions_required, priority, target_completion_date, 
-            actual_completion_date, property_inspection_reference, asset_no, business_entity, logged_by) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            actual_completion_date, property_inspection_reference, asset_no, business_entity) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', inspection_data)
 
-        # Insert data into 'aecom_visits' table
-        visit_data = (
-            additional_info["Asset No"],
-            additional_info["External Inspection Ref No"],
-            additional_info["Inspection Date"],
-            additional_info["Contractor"],
-            additional_info["Document"],
-            additional_info["Remedial Works"],
-            additional_info["Risk Rating"],
-            additional_info["Comments"],
-            additional_info["Archive"],
-            additional_info["Exclude from KPI"],
-            additional_info["Inspection Fully Completed"],
-            additional_info["Properties_Business Entity"],
-            additional_info["Logged By"]
-        )
+        print("Inserting into aecom_visits")
+
+        if isinstance(additional_info, tuple) and len(additional_info) == 2 and all(isinstance(item, dict) for item in additional_info):
+            # Insert data into 'aecom_visits' table
+            visit_data = (
+                additional_info[0].get("Asset No", ""),  # Provide default value if key is missing
+                additional_info[0].get("External Inspection Ref No", ""),
+                additional_info[0].get("Inspection Date", ""),
+                additional_info[0].get("Contractor", ""),
+                additional_info[0].get("Document", ""),
+                additional_info[0].get("Remedial Works", ""),
+                additional_info[0].get("Risk Rating", ""),
+                additional_info[0].get("Comments", ""),
+                additional_info[0].get("Archive", ""),
+                additional_info[0].get("Exclude from KPI", ""),
+                additional_info[0].get("Inspection Fully Completed", ""),
+                additional_info[0].get("Business Entity", ""),
+                additional_info[0].get("Logged By", "")
+            )
+
+        else:
+
+            print("Error: 'additional_info' object is not a dictionary.")
+
         conn.execute('''
             INSERT INTO aecom_visits 
             (asset_no, inspection_ref, inspection_date, contractor, document, 
@@ -383,19 +421,30 @@ def db_insert_function(info, additional_info, get_db, invoice_group):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', visit_data)
 
-        # Insert data into 'aecom_reports' table
-        report_data = (
-            additional_info["External Inspection Ref No"],
-            additional_info["Inspection Date"],
-            additional_info["Document"],
-            additional_info["Properties_Business Entity"],
-            invoice_value,
-            invoice_group
-        )
+        print("Inserting into aecom_reports")
+
+        if isinstance(additional_info, tuple) and len(additional_info) == 2 and all(isinstance(item, dict) for item in additional_info):
+
+            zipname = f"{additional_info[0].get('Properties_Business Entity', '')}_output.zip"
+            # Insert data into 'aecom_reports' table
+            report_data = (
+                additional_info[0].get("External Inspection Ref No", ""),
+                additional_info[0].get("Inspection Date", ""),
+                additional_info[0].get("Document", ""),
+                zipname,
+                additional_info[0].get("Properties_Business Entity", ""),
+                invoice_value,
+                invoice_group
+            )
+
+        else:
+
+            print("Error: Report data is broken :(")
+
         conn.execute('''
             INSERT INTO aecom_reports 
-            (inspection_ref, inspection_date, document_name, business_entity, invoice_value, invoice_group) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            (inspection_ref, inspection_date, document_name, zipname, business_entity, invoice_value, invoice_group) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', report_data)
 
         conn.commit()
@@ -514,3 +563,4 @@ def upload_csv():
 def download_file(filename):
     # Ensure OUTPUT_FOLDER is correctly set to the directory containing the generated CSV
     return send_from_directory(OUTPUT_FOLDER, filename, as_attachment=True)
+
