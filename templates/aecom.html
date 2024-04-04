@@ -1,0 +1,264 @@
+{% include 'header.html' %}
+<div class="container-fluid" style="margin-top:10px;">
+    <div class="row">
+        <div class="col-8">
+
+            {% if success_message %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <strong>Success!</strong> {{ success_message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            {% if error_message %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              <strong>Attention!</strong> {{ error_message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            <!-- Clients Page Contents-->
+            <div class="container-fluid">
+                <table class="table table-striped table-hover" style="cursor: pointer;" id="aecom-table">
+                    <thead>
+                        <tr>
+                            <th>Site Name</th>
+                            <th>Business Entity</th>
+                            <th>Inspection Date</th>
+                            <th>Invoice Value</th>
+                            <th>Invoice Group</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <!-- Display inspections from the database -->
+                    {% for report in aecom_reports %}
+                        <tr>
+                            <td></td> <!-- Will be looked up using foriegn key - Business Entity) -->
+                            <td>{{ report.business_entity }}</td>
+                            <td>{{ report.inspection_date }}</td>
+                            <td>{{ report.invoice_value }}</td>
+                            <td>{{ report.invoice_group }}</td>
+                            <td>
+                                <a href="/download_file/{{ OUTPUT_FOLDER }}/{{ report.zipname }}" class="btn btn-primary btn-sm">Download</a>
+                                <button type="button" class="btn btn-danger btn-sm delete-record-button" data-id="{{ report.id }}">Delete Record</button>
+                            </td>
+                        </tr>
+                      {% endfor %}
+                      <tfoot>
+                          <tr>
+                            <th>
+                              <button type="button" data-bs-toggle="modal" data-bs-target="#process-report" class="btn btn-primary">Process Report</button>
+                            </th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
+                <div class="card-header">Equipment Inspected:</div>
+                    <div class="card-body">
+                    <h5 class="card-title">0</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
+                <div class="card-header">Sites Inspected:</div>
+                    <div class="card-body">
+                    <h5 class="card-title">{{ unique_site_count }}</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
+                <div class="card-header">Invoice Value:</div>
+                    <div class="card-body">
+                    <h5 class="card-title">£0</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewsites" style="width:100%;">View Sites</button>
+        </div>
+        <div class="col-2">
+            <div class="card text-bg-success mb-3" style="max-width: 18rem;">
+                <div class="card-header">Assets with C Defects:</div>
+                <div class="card-body">
+                    <h5 class="card-title">0</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <div class="card text-bg-warning mb-3" style="max-width: 18rem;">
+                <div class="card-header">Assets with B Defects:</div>
+                <div class="card-body">
+                    <h5 class="card-title">0</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <div class="card text-bg-danger mb-3" style="max-width: 18rem;">
+                <div class="card-header">Assets with A Defects:</div>
+                <div class="card-body">
+                    <h5 class="card-title">0</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" style="width:100%;">View Equipment</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="process-report" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalToggleLabel">Process Reports</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="upload-form" action="/aecom" method="post" enctype="multipart/form-data">
+                    <div class="input-group mb-3">
+                        <input type="file" name="files[]" class="form-control" id="inputGroupFile01" multiple>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input class="form-control" type="text" id="business_entity" name="business_entity" required>
+                        <label for="business_entity" class="form-label">Business Entity:</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input class="form-control" type="text" id="invoice_value" name="invoice_value" required>
+                        <label for="invoice_value" class="form-label">Invoice Value:</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input class="form-control" type="text" id="invoice_group" name="invoice_group" required>
+                        <label for="invoice_group" class="form-label">Invoice Group:</label>
+                    </div>
+                    <div class="mb-3">
+                        <input type="submit" class="btn btn-primary" style="width:100%;" value="Process">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                Having Trouble? Please raise a <a href="mailto:aarongomm@isisafety.com">Support Ticket</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="viewsites" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalToggleLabel">AECOM Sites</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-striped table-hover" style="cursor: pointer;" id="aecom-sites">
+                    <thead>
+                        <tr>
+                            <th>Site Name</th>
+                            <th>Business Entity</th>
+                            <th>Address</th>
+                            <th>Town/City</th>
+                            <th>Postcode</th>
+                        </tr>
+                    </thead>
+                    <!-- Display inspections from the database -->
+                    {% for site in aecom_sites %}
+                        <tr>
+                            <td>{{ site.location_name }}</td>
+                            <td>{{ site.business_entity }}</td>
+                            <td>{{ site.address_line_1 }}</td>
+                            <td>{{ site.town_city }}</td>
+                            <td>{{ site.postcode }}</td>
+                        </tr>
+                      {% endfor %}
+                      <tfoot>
+                          <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('csvFileInput').click()">Upload Sites</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+<script type="text/javascript"> 
+    $(document).ready(function () {
+        $('#aecom-table').DataTable({
+            searching: true,
+            paging: true
+        });
+        $('#aecom-sites').DataTable({
+            searching: true,
+            paging: false
+        });
+
+        $('#upload-form').submit(function(event) {
+            // Call the showPleaseWaitMessage function
+            showPleaseWaitMessage();
+            
+            // Allow form submission after showing the "Please wait" message
+            return true;
+        });
+
+        // Event delegation for handling dynamically added elements
+        $(document).on('click', '.delete-record-button', function () {
+            var id = $(this).data('id'); // Get the id value from the data-id attribute
+            if (confirm('Are you sure you want to delete this record?')) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/delete-record-aecom',
+                    data: { id: id },
+                    success: function (response) {
+                        if (response.success) {
+                            $('.alert-success').html('<strong>Success!</strong> ' + response.message).show(); // Update success alert box content and show it
+                            $('.alert-warning').hide(); // Hide error alert box
+                            location.reload(true); // Reload the page to update the table
+                        } else {
+                            $('.alert-warning').html('<strong>Attention!</strong> ' + response.message).show(); // Update error alert box content and show it
+                            $('.alert-success').hide(); // Hide success alert box
+                        }
+                    },
+                    error: function (xhr, textStatus, errorThrown) {
+                        console.error('Error deleting asset:', xhr);
+                    }
+                });
+            }
+        });
+
+        // File upload handling
+        document.getElementById('csvFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload_csv', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Handle response from server, e.g., display success message or update table
+                console.log(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+</script>
+
+</html>

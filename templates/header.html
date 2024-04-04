@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
   <head>
-    <title>TrackEx - {{ title }}</title>
+    <title>ISI Tools - {{ title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
@@ -14,7 +14,7 @@
     <div class="container-fluid">
         <nav class="navbar fixed-top navbar-expand-lg bg-body-tertiary">
           <div class="container-fluid">
-            <a class="navbar-brand" href="/">TrackEx</a>
+            <a class="navbar-brand" href="/">ISI Tools</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
@@ -23,17 +23,37 @@
                 <li class="nav-item">
                   <a class="nav-link" href="/">Home</a>
                 </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="/jobs">Tasks</a>
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Client Reporting
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/aecom">AECOM - Royal Mail Group</a></li>
+                    <li><a class="dropdown-item" href="/#">Heller Machine Tools</a></li>
+                    <li><a class="dropdown-item" href="/#">Lee Lifting Services</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/#">General - LOLER</a></li>
+                  </ul>
+                </li>
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Asset Tracking
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/equipment">IT Assets</a></li>
+                    <li><a class="dropdown-item" href="/equipment">Engineer Equipment</a></li>
+                  </ul>
+                </li>
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    IT Support
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/tasks">Task Tracking</a></li>
+                  </ul>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="/clients">Clients</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="/equipment">Equipment</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="/contracts">Contracts</a>
+                  <a class="nav-link" href="/employees">Employees</a>
                 </li>
               </ul>
             </div>

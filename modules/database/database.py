@@ -4,7 +4,7 @@ from datetime import datetime
 
 db_blueprint = Blueprint('db_blueprint', __name__)
 
-DATABASE = './static/trackex.db'
+DATABASE = './static/isitools.db'
 
 def get_db():
     conn = sqlite3.connect(DATABASE)
@@ -142,6 +142,114 @@ def create_equipment_table():
     conn.commit()
     conn.close()
 
+def create_aecom_table():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS aecom_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            inspection_ref TEXT,
+            inspection_date TEXT,
+            document_name TEXT,
+            zipname TEXT,
+            business_entity TEXT,
+            invoice_value TEXT,
+            invoice_group TEXT,
+            logged_by TEXT,
+            FOREIGN KEY (business_entity) REFERENCES aecom_sites(business_entity)
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def create_aecom_visit_table():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS aecom_visits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_no TEXT,
+            inspection_ref TEXT,
+            inspection_date DATE,
+            contractor TEXT,
+            document TEXT,
+            remedial_actions TEXT,
+            risk_rating TEXT,
+            comments TEXT,
+            archive TEXT,
+            exclude_from_kpi TEXT,
+            inspection_fully_complete TEXT,
+            business_entity TEXT,
+            logged_by TEXT,
+            FOREIGN KEY (business_entity) REFERENCES aecom_sites(business_entity)
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def create_aecom_inspection_table():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS aecom_inspection (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            inspection_ref TEXT,
+            remedial_reference_number TEXT,
+            action_owner TEXT,
+            data_action_raised DATE,
+            corrective_job_number TEXT,
+            actions_required TEXT,
+            client_id TEXT,
+            serial_number TEXT,
+            sub_location TEXT,
+            priority TEXT,
+            target_completion_date DATE,
+            actual_completion_date DATE,
+            property_inspection_reference TEXT,
+            asset_no TEXT,
+            business_entity TEXT,
+            logged_by TEXT,
+            FOREIGN KEY (business_entity) REFERENCES aecom_sites(business_entity)
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def create_aecom_equipment_table():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS aecom_equipment (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            location_name TEXT,
+            business_entity TEXT,
+            client_id TEXT,
+            serial_number TEXT,
+            sub_location TEXT,
+            asset_notes TEXT,
+            install_year TEXT,
+            asset_type TEXT,
+            logged_by TEXT,
+            FOREIGN KEY (business_entity) REFERENCES aecom_sites(business_entity)
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def create_aecom_site_table():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS aecom_sites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            account_no TEXT,
+            location_name TEXT,
+            business_entity TEXT,
+            postcode TEXT,
+            address_line_1 TEXT,
+            address_line_2 TEXT,
+            town_city TEXT,
+            logged_by TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
 def get_all_clients():
     conn = get_db()
     cursor = conn.cursor()
@@ -211,3 +319,8 @@ create_jobs_table()
 create_jobtypes_table()
 create_forms_table()
 create_user_table()
+create_aecom_table()
+create_aecom_visit_table()
+create_aecom_inspection_table()
+create_aecom_equipment_table()
+create_aecom_site_table()
