@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for, session
+from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required
 from werkzeug.utils import secure_filename
 from datetime import datetime
@@ -28,6 +28,10 @@ def aecom():
     if request.method == 'POST':
         # Clear the input folder
         clear_input_folder(UPLOAD_FOLDER)
+        # Get Form Details
+        business_entity = request.form['business_entity']
+        invoice_value = request.form['invoice_value']
+        invoice_group = request.form['invoice_group']
         # Process file uploads
         files = request.files.getlist('files[]')
         for file in files:
@@ -40,8 +44,10 @@ def aecom():
 
         # Process the uploaded files
         business_entity = request.form.get('business_entity', '')
+        invoice_value = request.form.get('invoice_value', '')
+        invoice_group = request.form.get('invoice_group', '')
         try:
-            process_puwer_documents(UPLOAD_FOLDER, OUTPUT_FOLDER, PROCESSED_FOLDER, business_entity, get_db)
+            main_merged_pdf_path, faulty_reports_path, csv_file, csv_additional_file, first_report_date, date_str, additional_info_for_db = process_puwer_documents(UPLOAD_FOLDER, OUTPUT_FOLDER, PROCESSED_FOLDER, business_entity, get_db, invoice_group, invoice_value)
             # Prepare files for download
             files_to_zip = []
             for root, _, files in os.walk(OUTPUT_FOLDER):
@@ -51,7 +57,7 @@ def aecom():
 
             if not files_to_zip:
                 print("No files found for the specified business entity.")
-                return redirect(request.url)
+                return redirect(url_for('aecom_blueprint.aecom'))
 
             temp_folder = os.path.join(TEMP_DOWNLOAD_FOLDER, business_entity)
             os.makedirs(temp_folder, exist_ok=True)
@@ -69,20 +75,32 @@ def aecom():
             print("Files processed and zipped successfully.")
 
             # Redirect to the 'aecom' page to refresh
-            return redirect(url_for('aecom'))
+            return redirect(url_for('aecom_blueprint.aecom'))
 
         except Exception as e:
             print(f"Error processing files: {str(e)}")
-            return redirect(request.url)
+            return redirect(url_for('aecom_blueprint.aecom'))
 
     # Fetch data from aecom_reports table
     conn = get_db()
 
     aecom_reports = conn.execute('SELECT * FROM aecom_reports ORDER BY id').fetchall()
     aecom_sites = conn.execute('SELECT * FROM aecom_sites ORDER BY id').fetchall()
-    unique_site_count = conn.execute('SELECT COUNT(DISTINCT location_name) FROM aecom_sites')
+
+    # Calculate total reports 
+    unique_site_count = conn.execute('SELECT COUNT(DISTINCT inspection_ref) FROM aecom_reports').fetchone()[0]
+
+    # Calculate total invoice value
+    total_invoice_value = conn.execute('SELECT SUM(invoice_value) FROM aecom_reports').fetchone()[0]
+
+    entity_to_site = {}
+    entity_site_mapping = conn.execute('SELECT business_entity, location_name FROM aecom_sites')
+
+    for entity, site in entity_site_mapping:
+        entity_to_site[entity] = site
+
     conn.close()
-    return render_template('aecom.html', aecom_reports=aecom_reports, aecom_sites=aecom_sites, unique_site_count=unique_site_count)
+    return render_template('aecom.html', aecom_reports=aecom_reports, aecom_sites=aecom_sites, unique_site_count=unique_site_count, entity_to_site=entity_to_site, total_invoice_value=total_invoice_value)
 
 
 def clear_input_folder(upload_folder):
@@ -200,7 +218,7 @@ def extract_additional_information(text, business_entity, date_str):
 
     return additional_info, additional_info_secondary
 
-def process_puwer_documents(input_folder, output_folder, processed_folder, business_entity, get_db):
+def process_puwer_documents(input_folder, output_folder, processed_folder, business_entity, get_db, invoice_group, invoice_value):
     processed_pdfs = []
     faulty_reports_pdfs = []
     first_report_date = None
@@ -310,28 +328,82 @@ def process_puwer_documents(input_folder, output_folder, processed_folder, busin
                 
         if additional_info_for_db is not None:
             # Pass only the first dictionary of the tuple to db_insert_function
-            db_insert_function(additional_info_for_db[0], get_db)
+            db_insert_function(additional_info_for_db, get_db, invoice_group, invoice_value)
 
-    return main_merged_pdf_path, faulty_reports_path, csv_file, csv_additional_file, first_report_date, date_str
+    return main_merged_pdf_path, faulty_reports_path, csv_file, csv_additional_file, first_report_date, date_str, additional_info_for_db
 
-def db_insert_function(additional_info, get_db):
-    # Extract needed information
-    inspection_ref = additional_info["External Inspection Ref No"]
-    inspection_date = additional_info["Inspection Date"]
-    document_name = additional_info["Document"]
-    business_entity = additional_info["Properties_Business Entity"]
-    zipname = f"{business_entity}_output.zip"
-
-    # Database interaction
+def db_insert_function(info, additional_info, get_db, invoice_group):
     conn = get_db()
-    # Insert data into the table
-    conn.execute('''
-        INSERT INTO aecom_reports (inspection_ref, inspection_date, document_name, zipname, business_entity) 
-        VALUES (?, ?, ?, ?, ?)
-    ''', (inspection_ref, inspection_date, document_name, zipname, business_entity))
-    
-    conn.commit()
-    conn.close()
+    try:
+        # Insert data into 'aecom_inspection' table
+        inspection_data = (
+            info["Inspection Ref No"],
+            info["Remedial Reference Number"],
+            info["Action Owner"],
+            info["Date Action Raised"],
+            info["Corrective Job Number"],
+            info["Remedial Works Action Required Notes"],
+            info["Priority"],
+            info["Target Completion Date"],
+            info["Actual Completion Date"],
+            info["Property Inspection Ref No"],
+            info["Compliance or Asset Type_External Ref No"],
+            info["Property_Business Entity"],
+            info["Logged By"]
+        )
+        conn.execute('''
+            INSERT INTO aecom_inspection 
+            (inspection_ref, remedial_reference_number, action_owner, data_action_raised, 
+            corrective_job_number, actions_required, priority, target_completion_date, 
+            actual_completion_date, property_inspection_reference, asset_no, business_entity, logged_by) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', inspection_data)
+
+        # Insert data into 'aecom_visits' table
+        visit_data = (
+            additional_info["Asset No"],
+            additional_info["External Inspection Ref No"],
+            additional_info["Inspection Date"],
+            additional_info["Contractor"],
+            additional_info["Document"],
+            additional_info["Remedial Works"],
+            additional_info["Risk Rating"],
+            additional_info["Comments"],
+            additional_info["Archive"],
+            additional_info["Exclude from KPI"],
+            additional_info["Inspection Fully Completed"],
+            additional_info["Properties_Business Entity"],
+            additional_info["Logged By"]
+        )
+        conn.execute('''
+            INSERT INTO aecom_visits 
+            (asset_no, inspection_ref, inspection_date, contractor, document, 
+            remedial_actions, risk_rating, comments, archive, exclude_from_kpi, 
+            inspection_fully_complete, business_entity, logged_by) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', visit_data)
+
+        # Insert data into 'aecom_reports' table
+        report_data = (
+            additional_info["External Inspection Ref No"],
+            additional_info["Inspection Date"],
+            additional_info["Document"],
+            additional_info["Properties_Business Entity"],
+            invoice_value,
+            invoice_group
+        )
+        conn.execute('''
+            INSERT INTO aecom_reports 
+            (inspection_ref, inspection_date, document_name, business_entity, invoice_value, invoice_group) 
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', report_data)
+
+        conn.commit()
+    except Exception as e:
+        print(f"Error inserting data into database: {str(e)}")
+        conn.rollback()
+    finally:
+        conn.close()
 
 
 # Generate a unique filename (from lolerextract.py)
@@ -436,3 +508,9 @@ def upload_csv():
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+@aecom_blueprint.route('/download_file/<filename>')
+@login_required
+def download_file(filename):
+    # Ensure OUTPUT_FOLDER is correctly set to the directory containing the generated CSV
+    return send_from_directory(OUTPUT_FOLDER, filename, as_attachment=True)

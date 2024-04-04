@@ -33,7 +33,7 @@
                     <!-- Display inspections from the database -->
                     {% for report in aecom_reports %}
                         <tr>
-                            <td></td> <!-- Will be looked up using foriegn key - Business Entity) -->
+                            <td>{{ entity_to_site[report.business_entity] }}</td> <!-- Will be looked up using foriegn key - Business Entity) -->
                             <td>{{ report.business_entity }}</td>
                             <td>{{ report.inspection_date }}</td>
                             <td>{{ report.invoice_value }}</td>
@@ -76,7 +76,7 @@
             <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
                 <div class="card-header">Invoice Value:</div>
                     <div class="card-body">
-                    <h5 class="card-title">£0</h5>
+                    <h5 class="card-title">£{{ total_invoice_value }}</h5>
                     <p class="card-text"></p>
                 </div>
             </div>
