@@ -60,16 +60,16 @@
         </div>
         <div class="col-2">
             <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
-                <div class="card-header">Total Defective Equipment:</div>
+                <div class="card-header">Tracked Equipment:</div>
                     <div class="card-body">
-                    <h5 class="card-title">0</h5>
+                    <h5 class="card-title">Loads</h5>
                     <p class="card-text"></p>
                 </div>
             </div>
             <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
                 <div class="card-header">Average Process Time:</div>
                     <div class="card-body">
-                    <h5 class="card-title">0</h5>
+                    <h5 class="card-title">{{ average_process_time }}</h5>
                     <p class="card-text"></p>
                 </div>
             </div>
@@ -204,14 +204,6 @@
         $('#aecom-sites').DataTable({
             searching: true,
             paging: false
-        });
-
-        $('#upload-form').submit(function(event) {
-            // Call the showPleaseWaitMessage function
-            showPleaseWaitMessage();
-            
-            // Allow form submission after showing the "Please wait" message
-            return true;
         });
 
         // Event delegation for handling dynamically added elements

@@ -148,7 +148,8 @@ def create_aecom_table():
         CREATE TABLE IF NOT EXISTS aecom_reports (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             inspection_ref TEXT,
-            inspection_date TEXT,
+            inspection_date DATE,
+            process_date DATE,
             document_name TEXT,
             zipname TEXT,
             business_entity TEXT,
