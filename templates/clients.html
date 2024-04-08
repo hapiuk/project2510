@@ -271,6 +271,11 @@
             // Additional DataTable options can be added here
         });
 
+        $('#employee-table').DataTable({
+            searching: true,
+            paging: false
+        });
+
         // Handle click on table rows
         $('#clients-table tbody').on('click', '.clickable-row', function() {
             var accountNumber = $(this).data('account-number');

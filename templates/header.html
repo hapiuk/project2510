@@ -9,6 +9,9 @@
     <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/resumable.js/1.1.0/resumable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
   </head>
   <body>
     <div class="container-fluid">
@@ -29,10 +32,11 @@
                   </a>
                   <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="/aecom">AECOM - Royal Mail Group</a></li>
-                    <li><a class="dropdown-item" href="/#">Heller Machine Tools</a></li>
-                    <li><a class="dropdown-item" href="/#">Lee Lifting Services</a></li>
+                    <li><a class="dropdown-item disabled" href="/#">Heller Machine Tools</a></li>
+                    <li><a class="dropdown-item disabled" href="/#">GEA Mechanical Equipment UK Limited</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="/#">General - LOLER</a></li>
+                    <li><a class="dropdown-item" href="/loler">General - LOLER</a></li>
+                    <li><a class="dropdown-item disabled" href="/puwer">General - PUWER</a></li>
                   </ul>
                 </li>
                 <li class="nav-item dropdown">
@@ -53,7 +57,7 @@
                   </ul>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link disabled" href="/employees">Employees</a>
+                  <a class="nav-link" href="/employees" data-bs-toggle="modal" data-bs-target="#employees">Employees</a>
                 </li>
               </ul>
             </div>
@@ -64,8 +68,8 @@
                 {{ current_user.first_name }} {{ current_user.second_name }}
               </button>
               <ul class="dropdown-menu dropdown-menu-lg-end">
-                <li><a class="dropdown-item" href="#">Profile</a></li>
-                <li><a class="dropdown-item" href="#">Settings</a></li>
+                <li><a class="dropdown-item disabled" href="#">Profile</a></li>
+                <li><a class="dropdown-item disabled" href="#">Settings</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="/logout" style="color: red;">Logout</a></li>
               </ul>
@@ -75,3 +79,82 @@
     </div>
     <div class="container" style="padding: 1.5%;">
     </div>
+
+  <div class="modal fade" id="employees" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="employees">Employees</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="container-fluid" style="margin-top:10px;">
+                  <div class="row">
+                      <div class="col-9">
+                        <table class="table table-striped table-hover" style="cursor: pointer;" id="employee-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>First Name</th>
+                                    <th>Second Name</th>
+                                    <th>Email Address</th>
+                                </tr>
+                            </thead>
+                            <!-- Display inspections from the database -->
+                            {% for employees in users %}
+                                <tr>
+                                    <td>{{ employees.username }}</td>
+                                    <td>{{ employees.first_name }}</td>
+                                    <td>{{ employees.second_name }}</td>
+                                    <td>{{ employees.email_address }}</td>
+                                </tr>
+                              {% endfor %}
+                        </table>
+                      </div>
+                      <div class="col-3">
+                              {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                  {% for category, message in messages %}
+                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                      {{ message }}
+                                      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>
+                                  {% endfor %}
+                                {% endif %}
+                              {% endwith %}
+                              <form id="upload-form" action="/newuser" method="post" enctype="multipart/form-data">
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" type="text" id="user_name" name="user_name" required>
+                                    <label for="user_name" class="form-label">Username:</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" type="text" id="first_name" name="first_name" required>
+                                    <label for="first_name" class="form-label">First Name:</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" type="text" id="second_name" name="second_name" required>
+                                    <label for="second_name" class="form-label">Surname:</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" type="email" id="email_address" name="email_address" required>
+                                    <label for="email_address" class="form-label">Email Address:</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <input class="form-control" type="password" id="password" name="password" required>
+                                    <label for="password" class="form-label">Password:</label>
+                                </div>
+                                <div class="mb-3">
+                                    <input type="submit" class="btn btn-primary" style="width:100%;" value="Create New User">
+                                </div>
+                            </form>
+                      </div>
+                  </div>
+              </div>           
+            </div>
+            <div class="modal-footer">
+                Having Trouble? Please raise a <a href="mailto:aarongomm@isisafety.com">Support Ticket</a>
+            </div>
+        </div>
+    </div>
+</div>
+

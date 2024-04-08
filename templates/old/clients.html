@@ -1,0 +1,342 @@
+{% include 'header.html' %}
+<div class="container-fluid mt-3">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        
+        <button type="button" data-bs-toggle="modal" data-bs-target="#{{ buttonTarget }}" class="btn btn-outline-success">{{ buttonName }}</button>
+    </div>
+
+<!-- Content Row -->
+
+    <table id="clients-table" class="table table-striped table-hover" style="cursor: pointer;">
+        <thead>
+            <tr>
+                <th sortable="true">Account Number</th>
+                <th sortable="true">Client Name</th>
+                <th sortable="true">Address</th>
+                <th sortable="true">Town/City</th>
+                <th sortable="true">County</th>
+                <th sortable="true">Postcode</th>
+                <th sortable="true">Status</th>
+            </tr>
+        </thead>
+        <!-- Display clients from the database -->
+        {% for client in clients %}
+            <tr class="clickable-row"
+            data-account-number="{{ client.account_number }}"
+            data-client-name="{{ client.client_name }}"
+            data-address-1="{{ client.address_line_1 }}"
+            data-address-2="{{ client.address_line_2 }}"
+            data-town-city="{{ client.town_city }}"
+            data-county="{{ client.county }}"
+            data-email="{{ client.email }}"
+            data-phone="{{ client.phone_number }}"
+            data-postcode="{{ client.postcode }}"
+            data-status="{{ client.status }}">
+                <td>{{ client.account_number }}</td>
+                <td>{{ client.client_name }}</td>
+                <td>{{ client.address_line_1 }}, {{ client.address_line_2 }}</td>
+                <td>{{ client.town_city }}</td>
+                <td>{{ client.county }}</td>
+                <td>{{ client.postcode }}</td>
+                <td>{{ client.status }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<!-- Modals -->
+
+<div class="modal fade" id="new-client-modal" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalToggleLabel">Create New Client</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/create-client" method="post" id="add-client-form">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="account_number" id="account_number" required>
+                        <label for="account_number">Account Number:</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" name="client_name" class="form-control" id="client_name" required>
+                        <label for="client_name" class="form-label">Client Name:</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="address_line_1" id="address_line_1" required>
+                        <label for="address_line_1" class="form-label">Address Line 1:</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="address_line_2" id="address_line_2">
+                        <label for="address_line_2" class="form-label">Address Line 2:</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="town_city" id="town_city" required>
+                        <label for="town_city" class="form-label">Town/City:</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="county" id="county" required>
+                        <label for="county" class="form-label">County:</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="postcode" id="postcode" required>
+                        <label for="postcode" class="form-label">Postcode:</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" name="phone_number" id="phone_number" required>
+                        <label for="phone_number" class="form-label">Contact Number:</label>
+                    </div>           
+                    <div class="form-floating mb-3">
+                        <select class="form-select" aria-label="Active Status" name="status" id="status">
+                            <option selected>Select Client Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Closed">Closed</option>
+                            <option value="Prospect">Prospect</option>
+                        </select>
+                        <label for="status">Status:</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary" value="Add Client">Submit</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-success" data-bs-target="#uploadclientscsv" data-bs-toggle="modal">Upload Client CSV</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="uploadclientscsv" aria-hidden="true" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalToggleLabel2">Upload Client CSV</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form action="/upload-clients" method="post" enctype="multipart/form-data" id="upload-clients-form">
+                <div class="form-group">
+                    <div class="mb-3">
+                        <label for="csv_file">Upload Clients CSV File:</label>
+                    </div>
+                    <div class="mb-3">
+                        <input type="file" name="csv_file" id="csv_file" accept=".csv" class="btn btn-outline-primary">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input id="upload-clients-button" type="submit" value="Upload CSV" class="btn btn-outline-primary">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <a href="/download-client-template" class="btn btn-secondary" download>Download Template</a>
+        </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="client-details-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Client Details: <span id="modal-account-number"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="/update-client" method="post" enctype="multipart/form-data" id="update-client-form">
+                    <input type="hidden" name="account_number" id="hidden-account-number">
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="modal-client-name" name="client_name">
+                                <label for="modal-client-name">Client Name:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="modal-address-1" name="address_line_1">
+                                <label for="modal-address-1">Address Line 1:</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="modal-address-2" name="address_line_2">
+                                <label for="modal-address-2">Address Line 2:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="modal-town-city" name="town_city">
+                                <label for="modal-town-city">Town/City:</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="modal-county" name="county">
+                                <label for="modal-postcode">County:</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="modal-postcode" name="postcode">
+                                <label for="modal-postcode">Postcode:</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <select class="form-select" aria-label="Active Status" name="status" id="status">
+                                    <option value="Active">Active</option>
+                                    <option value="Closed">Closed</option>
+                                    <option value="Prospect">Prospect</option>
+                                </select>
+                                <label for="status">Status:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="modal-phone_number" name="phone_number">
+                                <label for="modal-phone">Contact Number:</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <input type="email" class="form-control" id="modal-email" name="email">
+                                <label for="email" class="form-label">Contact Email:</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <div id="map-container" style="height: 400px;"></div>
+                                <label class="form-label">Map</label>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-floating mb-3">
+                                <textarea class="form-control" id="modal-notes" name="notes" style="height: 400px;"></textarea>
+                                <label for="" class="form-label">Client Notes</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="submit-update-client-form">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>    
+
+</body>
+<script>
+
+    let map;
+
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map-container'), {
+            zoom: 15,
+            center: { lat: -34.397, lng: 150.644 } // Default location
+        });
+    }
+
+    function geocodeAddress(address) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ 'address': address }, function(results, status) {
+            if (status === 'OK') {
+                map.setCenter(results[0].geometry.location);
+                new google.maps.Marker({
+                    map: map,
+                    position: results[0].geometry.location
+                });
+            } else {
+                console.log('Geocode error: ' + status);
+            }
+        });
+    }
+
+
+    $(document).ready(function() {
+        // Initialize DataTables on your clients table
+        $('#clients-table').DataTable({
+            searching: true,
+            paging: true
+            // Additional DataTable options can be added here
+        });
+
+        // Handle click on table rows
+        $('#clients-table tbody').on('click', '.clickable-row', function() {
+            var accountNumber = $(this).data('account-number');
+
+            // Make AJAX request to get client details
+            $.ajax({
+                url: '/get-client/' + accountNumber,
+                type: 'GET',
+                success: function(data) {
+                    // Populate the modal with the data
+                    $('#hidden-account-number').val(data.account_number);
+                    $('#modal-account-number').text(data.account_number);
+                    $('#modal-client-name').val(data.client_name);
+                    $('#modal-address-1').val(data.address_line_1);
+                    $('#modal-address-2').val(data.address_line_2);
+                    $('#modal-town-city').val(data.town_city);
+                    $('#modal-county').val(data.county);
+                    $('#modal-postcode').val(data.postcode);
+                    $('#modal-email').val(data.email);
+                    $('#modal-phone_number').val(data.phone_number);
+                    $('#modal-notes').val(data.notes);
+                    $('#modal-status').val(data.status);
+                    
+                    // Show the modal
+                    $('#client-details-modal').modal('show');
+                },
+                error: function(error) {
+                    console.log('Error fetching client details: ', error);
+                }
+            });
+        });
+
+        // Submit the update client form
+        $('#submit-update-client-form').click(function() {
+            $('#update-client-form').submit();
+        });
+
+
+        $('#submit-update-client-form').click(function() {
+            var formData = new FormData($('#update-client-form')[0]);
+
+            $.ajax({
+                url: '/update-client',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    // Handle success - e.g., close modal, show success message
+                    $('#client-details-modal').modal('hide');
+                    alert(response.message);  // Display success message
+                    // Refresh the clients table if needed
+                },
+                error: function(xhr) {
+                    // Handle error
+                    alert('Error updating client: ' + xhr.responseJSON.error);
+                }
+            });
+        });
+
+
+
+        $('#client-details-modal').on('shown.bs.modal', function () {
+            var fullAddress = $('#modal-address-1').val() + ' ' + $('#modal-address-2').val() + ' ' + $('#modal-town-city').val() + ' ' + $('#modal-postcode').val();
+            geocodeAddress(fullAddress);
+        }); 
+    });
+</script>
+</html>

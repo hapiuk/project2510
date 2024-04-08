@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, render_template, flash, redirect,
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from datetime import datetime
-from modules.database.database import db_blueprint, get_db, get_all_clients, get_client_details
+from modules.database.database import db_blueprint, get_db
 from PyPDF2 import PdfMerger
 
 import logging
@@ -22,6 +22,7 @@ UPLOAD_FOLDER = './input'
 OUTPUT_FOLDER = './output'
 PROCESSED_FOLDER = './processed'
 TEMP_DOWNLOAD_FOLDER = './output'
+TEMP_CHUNK_FOLDER = './temp_chunks'
 ALLOWED_EXTENSIONS = {'pdf'}
 
 
@@ -115,6 +116,7 @@ def aecom():
     aecom_reports = conn.execute('SELECT * FROM aecom_reports ORDER BY id').fetchall()
     aecom_sites = conn.execute('SELECT * FROM aecom_sites ORDER BY id').fetchall()
     aecom_defects = conn.execute('SELECT * FROM aecom_inspection ORDER BY id').fetchall()
+    users = conn.execute('SELECT * FROM users').fetchall()
 
     # Calculate total reports 
     unique_site_count = conn.execute('SELECT COUNT(DISTINCT inspection_ref) FROM aecom_reports').fetchone()[0]
@@ -138,7 +140,7 @@ def aecom():
 
     conn.close()
 
-    return render_template('aecom.html', aecom_reports=aecom_reports, aecom_sites=aecom_sites, aecom_defects=aecom_defects, unique_site_count=unique_site_count, entity_to_site=entity_to_site, total_invoice_value=total_invoice_value, moderate_count=moderate_count, substantial_count=substantial_count, intolerable_count=intolerable_count, defect_count=defect_count, average_process_time=average_processing_time)
+    return render_template('aecom.html', aecom_reports=aecom_reports, aecom_sites=aecom_sites, aecom_defects=aecom_defects, unique_site_count=unique_site_count, entity_to_site=entity_to_site, total_invoice_value=total_invoice_value, moderate_count=moderate_count, substantial_count=substantial_count, intolerable_count=intolerable_count, defect_count=defect_count, average_process_time=average_processing_time, users=users)
 
 
 def clear_input_folder(upload_folder):
@@ -394,6 +396,7 @@ def process_puwer_documents(input_folder, output_folder, processed_folder, busin
 
     # Call process_report_entry here to ensure it's only called once
     process_report_entry(information, additional_info_for_db, invoice_value, invoice_group, get_db)
+    clear_input_folder(UPLOAD_FOLDER)
 
     return main_merged_pdf_path, faulty_reports_path, csv_file, csv_additional_file, first_report_date, date_str, additional_info_for_db
 

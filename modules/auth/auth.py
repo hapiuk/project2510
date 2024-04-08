@@ -1,7 +1,7 @@
 from flask import Blueprint, request, render_template, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user, UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from modules.database.database import db_blueprint, get_db, get_all_clients, get_client_details
+from modules.database.database import db_blueprint, get_db
 
 auth_blueprint = Blueprint('auth', __name__)
 
@@ -23,6 +23,43 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('auth.login'))
+
+@auth_blueprint.route('/newuser', methods=['POST'])
+@login_required
+def new_user():
+    if request.method == 'POST':
+        # Extract form data
+        username = request.form['user_name']
+        first_name = request.form['first_name']
+        second_name = request.form['second_name']
+        email_address = request.form['email_address']
+        password = request.form['password']
+        
+        # Hash the password
+        hashed_password = generate_password_hash(password)
+        
+        # Create the user in the database
+        conn = get_db()
+        cursor = conn.cursor()
+        try:
+            # Check if the user already exists
+            cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+            existing_user = cursor.fetchone()
+            if existing_user:
+                flash('Username already exists. Please choose another one.', 'warning')
+                return redirect(url_for('auth.login'))
+                
+            # Insert the new user into the database
+            cursor.execute('INSERT INTO users (username, password_hash, first_name, second_name, email_address) VALUES (?, ?, ?, ?, ?)', 
+                           (username, hashed_password, first_name, second_name, email_address))
+            conn.commit()
+            flash('User created successfully.', 'success')
+        except Exception as e:
+            flash(f'Error creating user: {str(e)}', 'danger')
+        finally:
+            conn.close()
+            
+        return redirect(url_for('auth.login'))
 
 def add_default_user():
     username = 'admin'

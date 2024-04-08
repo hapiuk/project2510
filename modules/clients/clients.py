@@ -2,8 +2,7 @@ from flask import Blueprint, request, jsonify, render_template, flash, redirect,
 from flask_login import LoginManager, login_user, logout_user, login_required
 import sqlite3
 from datetime import datetime
-from modules.database.database import db_blueprint, get_db, get_all_clients, get_client_details
-
+from modules.database.database import db_blueprint, get_db
 clients_blueprint = Blueprint('clients_blueprint', __name__)
 
 @clients_blueprint.route('/clients')

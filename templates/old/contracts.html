@@ -1,0 +1,155 @@
+{% include 'header.html' %}
+<div class="container-fluid mt-3">
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        
+        <button type="button" data-bs-toggle="modal" data-bs-target="#{{ buttonTarget }}" class="btn btn-outline-success">{{ buttonName }}</button>
+    </div>
+
+    <table id="contracts-table" class="table table-striped table-hover" style="cursor: pointer;">
+        <thead>
+            <tr>
+                <th>Contract ID</th>
+                <th>Client</th>
+                <th>Job Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Renewal Date</th>
+                <th>Contract Charge</th>
+                <th>Billing Cycle</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for contract in contracts %}
+            <tr class="clickable-row">
+                <td>{{ contract.id }}</td>
+                <td>{{ contract.client_name }}</td>
+                <td>{{ contract.job_type }}</td>
+                <td>{{ contract.start_date }}</td>
+                <td>{{ contract.end_date }}</td>
+                <td>{{ contract.renewal_date }}</td>
+                <td>{{ contract.contract_charge }}</td>
+                <td>{{ contract.billing_cycle }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+    <div class="modal fade" id="new-contract-modal" tabindex="-1" style="display: none;" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h1 class="modal-title fs-5" id="exampleModalToggleLabel">Create New Contract</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="/create-contract" method="post" id="create-contract-form">
+
+                        <div class="mb-3 form-floating">
+                            <input name="client_account_number" class="form-control" list="datalistOptions" id="client_account_number" placeholder="Type to search...">
+                            <datalist id="datalistOptions">
+                            {% for client in clients %}
+                              <option value="{{ client.account_number }}">{{ client.account_number }}</option>
+                            {% endfor %} 
+                            </datalist>
+                            <label for="client_account_number">Client Account Number:</label>
+                        </div>
+                               
+                        <div class="mb-3 form-floating">
+                            <select name="job_type" id="job_type" class="form-select" aria-label="Select Contract Job Type" required>
+                                <option value="LOLER">LOLER</option>
+                                <option value="PUWER">PUWER</option>
+                            </select>
+                            <label for="job_type">Job Type:</label>
+                        </div>
+
+                        <div class="mb-3 form-floating">
+                            <input type="date" name="start_date" id="start_date" class="form-control" required>
+                            <label for="start_date">Start Date:</label>
+                        </div>
+
+                        <div class="mb-3 form-floating">
+                            <input type="text" name="contract_charge" id="contract_charge" class="form-control" required>
+                            <label for="contract_charge">Contract Charge:</label>
+                        </div>
+                        
+                        <div class="mb-3 form-floating">   
+                            <select name="billing_cycle" id="billing_cycle" class="form-select" required>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="annually">Annually</option>
+                            </select>
+                            <label for="billing_cycle">Billing Cycle:</label>
+                        </div>
+
+                        <div class="mb-3 form-floating">
+                            <select multiple name="equipment[]" id="equipment" class="form-select" style="height: 200px;">
+
+                            </select>
+                            <label for="equipment">Equipment:</label>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <select class="form-select" aria-label="Active Status" name="status" id="status">
+                                <option selected>Select Client Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Closed">Closed</option>
+                                <option value="Prospect">Prospect</option>
+                            </select>
+                            <label for="status">Status:</label>
+                        </div>
+                        <input type="submit" value="Create Contract" class="btn btn-primary">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    $(document).ready(function() {
+        // Event listener for client dropdown change
+        $('#client_account_number').on('change', function() {
+
+            var selectedAccountNumber = $(this).val();
+            console.log('Selected Account Number:', selectedAccountNumber);
+
+            // Clear the equipment options
+            $('#equipment').empty();
+
+            if (selectedAccountNumber) {
+                // Send the selected account number as a parameter in the AJAX request
+                $.ajax({
+                    url: '/get-equipment-for-client/' + selectedAccountNumber,
+                    type: 'GET',
+                    success: function(data) {
+                        var equipmentSelect = $('#equipment');
+                        data.forEach(function(equip) {
+                            equipmentSelect.append(new Option(equip.equipment_number + ' - ' + equip.equipment_type, equip.id));
+                        });
+                    },
+                    error: function(error) {
+                        console.error('Error:', error);
+                    }
+                });
+            }
+        });
+
+
+        // Initialize DataTable
+        $('#contracts-table').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true
+        });
+
+        // Make table rows clickable
+        $('#contracts-table').on('click', '.clickable-row', function() {
+            window.location.href = $(this).data('href');
+        });
+    });
+</script>
+</html>

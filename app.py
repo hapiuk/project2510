@@ -13,13 +13,10 @@ import zipfile
 import sqlite3
 import shutil
 from datetime import datetime, timedelta
-from modules.database.database import db_blueprint, get_db, get_all_clients
+from modules.database.database import db_blueprint, get_db
 from modules.aecom.aecom import aecom_blueprint, clear_input_folder, allowed_file
-from modules.clients.clients import clients_blueprint
-from modules.equipment.equipment import equipment_blueprint
-from modules.contracts.contracts import contracts_blueprint
-from modules.jobs.jobs import jobs_blueprint
 from modules.auth.auth import auth_blueprint, add_default_user, User
+from modules.loler.loler import loler_blueprint
 
 
 app = Flask(__name__)
@@ -41,17 +38,17 @@ add_default_user()
 # Register Blueprints
 app.register_blueprint(db_blueprint)
 app.register_blueprint(aecom_blueprint)
-app.register_blueprint(clients_blueprint)
-app.register_blueprint(equipment_blueprint)
-app.register_blueprint(contracts_blueprint)
-app.register_blueprint(jobs_blueprint)
 app.register_blueprint(auth_blueprint)
+app.register_blueprint(loler_blueprint)
 
 
 @app.route('/', methods=['GET'])
 @login_required
 def root():
-    return render_template('index.html', title='Dashboard')
+    conn = get_db()
+    users = conn.execute('SELECT * FROM users').fetchall()
+    conn.close()
+    return render_template('index.html', title='Dashboard', users=users)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,104 @@
+<script type="text/javascript"> 
+    $(document).ready(function () {
+        $('#loler-table').DataTable({
+            searching: true,
+            paging: true
+        });
+        $('#loler-sites').DataTable({
+            searching: true,
+            paging: false
+        });
+        $('#loler-defects').DataTable({
+            searching: true,
+            paging: false
+        });
+        $('#employees').DataTable({
+            searching: true,
+            paging: false
+        });        
+        $('#aecom-table').DataTable({
+            searching: true,
+            paging: true
+        });
+        $('#aecom-sites').DataTable({
+            searching: true,
+            paging: false
+        });
+        $('#aecom-defects').DataTable({
+            searching: true,
+            paging: false
+        });
+
+
+        // Event delegation for handling dynamically added elements
+        $(document).on('click', '.delete-record-button', function () {
+            var id = $(this).data('id'); // Get the id value from the data-id attribute
+            if (confirm('Are you sure you want to delete this record?')) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/delete-record-loler',
+                    data: { id: id },
+                    success: function (response) {
+                        if (response.success) {
+                            $('.alert-success').html('<strong>Success!</strong> ' + response.message).show(); // Update success alert box content and show it
+                            $('.alert-warning').hide(); // Hide error alert box
+                            location.reload(true); // Reload the page to update the table
+                        } else {
+                            $('.alert-warning').html('<strong>Attention!</strong> ' + response.message).show(); // Update error alert box content and show it
+                            $('.alert-success').hide(); // Hide success alert box
+                        }
+                    },
+                    error: function (xhr, textStatus, errorThrown) {
+                        console.error('Error deleting asset:', xhr);
+                    }
+                });
+            }
+        });
+
+        // Event delegation for handling dynamically added elements
+        $(document).on('click', '.delete-record-button', function () {
+            var id = $(this).data('id'); // Get the id value from the data-id attribute
+            if (confirm('Are you sure you want to delete this record?')) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/delete-record-aecom',
+                    data: { id: id },
+                    success: function (response) {
+                        if (response.success) {
+                            $('.alert-success').html('<strong>Success!</strong> ' + response.message).show(); // Update success alert box content and show it
+                            $('.alert-warning').hide(); // Hide error alert box
+                            location.reload(true); // Reload the page to update the table
+                        } else {
+                            $('.alert-warning').html('<strong>Attention!</strong> ' + response.message).show(); // Update error alert box content and show it
+                            $('.alert-success').hide(); // Hide success alert box
+                        }
+                    },
+                    error: function (xhr, textStatus, errorThrown) {
+                        console.error('Error deleting asset:', xhr);
+                    }
+                });
+            }
+        });
+
+        // File upload handling
+        document.getElementById('csvFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload_csv', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Handle response from server, e.g., display success message or update table
+                console.log(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+</script>
+</html>

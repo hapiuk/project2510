@@ -1,0 +1,282 @@
+{% include 'header.html' %}
+<div class="container-fluid mt-3">
+    <!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+    
+    <button type="button" data-bs-toggle="modal" data-bs-target="#{{ buttonTarget }}" class="btn btn-outline-success">{{ buttonName }}</button>
+</div>
+
+<!-- Content Row -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            New Tasks</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">154</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Completed Tasks</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">341</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Open Tasks
+                        </div>
+                        <div class="row no-gutters align-items-center">
+                            <div class="col-auto">
+                                <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">57</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Overdue Tasks</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">18</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-comments fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <table class="table table-striped table-hover" style="cursor: pointer;" id="tasks-table">
+        <thead>
+            <tr>
+                <th>Task Number</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Assignee</th>
+                <th>Due Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr class="clickable-row" 
+                data-task-id="{{ task.id }}" 
+                data-status-id="{{ task.statusId }}"
+                data-priority-id="{{ task.priorityId }}"
+                data-assignee-id="{{ task.assigneeId }}" 
+                data-title="{{ task.title }}"
+                data-description="{{ task.description }}" 
+                data-status="{{ task.status }}" 
+                data-priority="{{ task.priority }}" 
+                data-assignee-name="{{ task.assignee_name }}" 
+                data-reporter-name="{{ task.reporter_id }}" 
+                data-due-date="{{ task.due_date }}"
+                data-created-at="{{ task.created_at }}">
+                <td>{{ task.id }}</td>
+                <td>{{ task.title }}</td>
+                <td>{{ task.status }}</td> 
+                <td>{{ task.priority_name }}</td>
+                <td>{{ task.assignee_name }}</td>
+                <td>{{ task.due_date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<div class="modal fade" id="task-details-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Task Number: <span id="task-id-display"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                
+                <div class="container text-center">
+                    <div class="row">
+                        <div class="col order-first">
+                            <div class="row">
+                                <div class="col">
+                                    <form id="update-task-form">
+                                        <input type="hidden" id="modal-task-id" value="">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" id="task-title" name="taskTitle">
+                                            <label for="taskTitle">Subject:</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <textarea class="form-control" id="task-description" name="taskDescription" rows="4"></textarea>
+                                            <label for="taskDescription">Description:</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <select class="form-select" id="task-status" name="taskStatus">
+                                                <!-- Leave Clear for population -->
+                                            </select>
+                                            <label for="taskStatus">Status:</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <select class="form-select" id="task-priority" name="taskPriority">
+                                                <!-- Leave Clear for population -->
+                                            </select>
+                                            <label for="taskPriority">Priority:</label>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col">
+                                                <div class="form-floating mb-3">
+                                                    <select class="form-select" id="task-assignee" name="assigneeId">
+                                                        <!-- Options will be dynamically added here -->
+                                                    </select>
+                                                    <label for="assigneeId">Assigned To:</label>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="form-floating mb-3">
+                                                    <input type="text" class="form-control" id="task-reportername" name="taskReportername">
+                                                    <label for="taskReportername">Logged By:</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="date" class="form-control" id="task-duedate" name="taskDuedate">
+                                            <label for="taskDuedate">Task Due:</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" id="date-stamp" name="dateStamp" readonly>
+                                            <label for="dateStamp">Task Logged:</label>
+                                        </div>
+                                        <div class="form-floating mb-3">
+                                            <button type="submit" class="btn btn-primary" style="width: 100%;">Update Task</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col order-last">
+                            <form id="add-comment-form">
+                                <input type="hidden" id="comment-task-id" name="task_id">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="comment-employee-id" name="employee_id">
+                                        <!-- Employee options will be dynamically added here -->
+                                    </select>
+                                    <label for="comment-employee-id">Comment As:</label>
+                                </div>
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="comment-text" placeholder="Add new comment..." name="comment-text" rows="8"></textarea>
+                                    <label for="comment-text">New Comment</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Comment</button>
+                            </form>
+                            <div class="form-floating mb-3 overflow-auto">
+                                <ul id="task-comments-list" class="list-unstyled">
+                                    <!-- Comments will be listed here -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+               </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add New Task Modal -->
+<div class="modal fade" id="add-task-modal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTaskModalLabel">Add New Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-task-form">
+                    <div class="mb-3">
+                        <label for="new-task-title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="new-task-title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-task-description" class="form-label">Description</label>
+                        <textarea class="form-control" id="new-task-description" name="description" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-task-status" class="form-label">Status</label>
+                        <select class="form-select" id="new-task-status" name="status">
+                            <!-- Status options will be dynamically loaded here -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-task-priority" class="form-label">Priority</label>
+                        <select class="form-select" id="new-task-priority" name="priority">
+                            <!-- Priority options will be dynamically loaded here -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-task-assignee" class="form-label">Assignee</label>
+                        <select class="form-select" id="new-task-assignee" name="assignee">
+                            <!-- Assignee options will be dynamically loaded here -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new-task-due-date" class="form-label">Due Date</label>
+                        <input type="date" class="form-control" id="new-task-due-date" name="dueDate">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Create Task</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+                                
+<script>
+$(document).ready(function () {
+    $('#tasks-table').DataTable({
+        searching: true,
+        paging: true,
+    });
+});
+</script>
+</html>

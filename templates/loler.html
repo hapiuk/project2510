@@ -1,0 +1,355 @@
+{% include 'header.html' %}
+<div class="container-fluid" style="margin-top:10px;">
+    <div class="row">
+        <div class="col-8">
+
+            {% if success_message %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <strong>Success!</strong> {{ success_message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            {% if error_message %}
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              <strong>Attention!</strong> {{ error_message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endif %}
+
+            <!-- Clients Page Contents-->
+            <div class="container-fluid">
+                <table class="table table-striped table-hover" style="cursor: pointer;" id="loler-table">
+                    <thead>
+                        <tr>
+                            <th>Site Name</th>
+                            <th>Inspection Date</th>
+                            <th>Next Inspection</th>
+                            <th>Asset Count</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <!-- Display inspections from the database -->
+                    {% for report in loler_inspections %}
+                        <tr>
+                            <td>{{ report.client_name }}</td>
+                            <td>{{ report.report_date }}</td>
+                            <td>{{ report.next_inspection_date }}</td>
+                            <td>{{ report.report_count }}</td>
+                            <td>
+                                <a href="/download_file/{{ OUTPUT_FOLDER }}/{{ report.zipname }}" class="btn btn-primary btn-sm">Download</a>
+                                <button type="button" class="btn btn-danger btn-sm delete-record-button" data-id="{{ report.id }}">Delete Record</button>
+                            </td>
+                        </tr>
+                      {% endfor %}
+                      <tfoot>
+                          <tr>
+                            <th>
+                              <button type="button" data-bs-toggle="modal" data-bs-target="#process-report" class="btn btn-primary">Process Report</button>
+                            </th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
+                <div class="card-header">Assets Processed:</div>
+                    <div class="card-body">
+                    <h5 class="card-title">{{ defect_count }}</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
+                <div class="card-header">Average Process Time:</div>
+                    <div class="card-body">
+                    <h5 class="card-title">{{ average_processing_time }}</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <div class="card text-bg-dark mb-3" style="max-width: 18rem;">
+                <div class="card-header">Sites Processed:</div>
+                    <div class="card-body">
+                    <h5 class="card-title">{{ site_count }}</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary disabled" data-bs-toggle="modal" data-bs-target="#viewsites" style="width:100%;">View Sites</button>
+        </div>
+        <div class="col-2">
+            <div class="card text-bg-success mb-3" style="max-width: 18rem;">
+                <div class="card-header">Assets with C Defects:</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ moderate_count }}</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <div class="card text-bg-warning mb-3" style="max-width: 18rem;">
+                <div class="card-header">Assets with B Defects:</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ substantial_count }}</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <div class="card text-bg-danger mb-3" style="max-width: 18rem;">
+                <div class="card-header">Assets with A Defects:</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ intolerable_count }}</h5>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#viewdefects" style="width:100%;">Report Overview</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div class="modal fade" id="process-report" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h1 class="modal-title fs-5" id="exampleModalToggleLabel">Process LOLER Reports</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+                  <div class="input-group mb-3">
+                      <div class="btn-group" role="group" aria-label="Basic mixed styles example" style="width:100%;">
+                        <button type="file" class="btn btn-secondary" id="resumable_input" style="width:60%;" multiple required>Browse Files:</button>
+                        <button type="button" class="btn btn-secondary" id="file-count-display" disabled>No files selected</button>
+                      </div>
+                  </div>
+                  <div class="form-floating mb-3">
+                      <input class="form-control" type="text" id="client_name" name="client_name" required>
+                      <label for="client_name" class="form-label">Client Name:</label>
+                  </div>
+                  <button type="button" id="start-upload" class="btn btn-primary" style="width:100%;">Process</button>
+          </div>
+          <div class="modal-footer">
+          </div>
+      </div>
+  </div>
+</div>
+
+<div class="modal fade" id="viewdefects" tabindex="-1" style="display: none;" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="viewdefects">LOLER All Defects</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-striped table-hover" style="cursor: pointer;" id="loler-defects">
+                    <thead>
+                        <tr>
+                            <th>Site Name</th>
+                            <th>Equipment Type</th>
+                            <th>ISI Number</th>
+                            <th>Serial Number</th>
+                            <th>Client ID</th>
+                            <th>Report ID</th>
+                            <th>Defects (Y/N)</th>
+                        </tr>
+                    </thead>
+                    <!-- Display inspections from the database -->
+                    {% for defect in defects %}
+                        <tr>
+                            <td>{{ defect.client_name }}</td>
+                            <td>{{ defect.equipment_type }}</td>
+                            <td>{{ defect.isi_number }}</td>
+                            <td>{{ defect.serial_number }}</td>
+                            <td>{{ defect.client_id }}</td>
+                            <td>{{ defect.report_id }}</td>
+                            <td>
+                                {% if defect.a_defect == 'None' and defect.b_defect == 'None' and defect.c_defect == 'None' %}
+                                    No
+                                {% else %}
+                                    {% set severity = 'None' %}
+                                    {% if defect.c_defect != 'None' %}
+                                        {% set severity = 'C' %}
+                                    {% endif %}
+                                    {% if defect.b_defect != 'None' and defect.b_defect > severity %}
+                                        {% set severity = 'B' %}
+                                    {% endif %}
+                                    {% if defect.a_defect != 'None' and defect.a_defect > severity %}
+                                        {% set severity = 'A' %}
+                                    {% endif %}
+                                    {{ severity }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                      <tfoot>
+                          <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="modal-footer">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+</body>
+<script type="text/javascript">
+$(document).ready(function () {
+    $('#loler-table').DataTable({
+        searching: true,
+        paging: true
+    });
+    $('#loler-sites').DataTable({
+        searching: true,
+        paging: false
+    });
+    $('#loler-defects').DataTable({
+        searching: true,
+        paging: false
+    });
+    $('#employee-table').DataTable({
+        searching: true,
+        paging: false
+    });   
+
+    var r = new Resumable({
+        target: '/upload_chunk',
+        query: {upload_token: 'unique_upload_token'}, // Adjust as needed
+        fileType: ['pdf'],
+        maxFileSize: 500*1024*1024, // Adjust according to your needs
+        chunkSize: 250*1024*1024, // Adjust chunk size, if necessary
+        testChunks: false,
+        throttleProgressCallbacks: 1,
+    });
+
+    r.assignBrowse(document.getElementById('resumable_input'));
+
+    r.on('fileAdded', function(file, event) {
+        var fileCount = r.files.length;
+        $('#file-count-display').text(fileCount + " file(s) selected");
+    });
+
+    $('#start-upload').click(function(){
+        var clientName = $('#client_name').val(); // Capture client name when the process starts
+        if(clientName) {
+            // Show "Please wait" message
+            Swal.fire({
+                title: 'Please wait...',
+                html: 'Uploading files...',
+                allowOutsideClick: false,
+                onBeforeOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            r.opts.query.client_name = clientName; // Include client name in query
+            r.upload();
+        } else {
+            alert('Client name is required.');
+        }
+    });
+
+    // Function to handle file upload completion
+    r.on('complete', function(){
+        // All files have been uploaded
+        console.log("All files have been uploaded successfully.");
+        var clientName = $('#client_name').val();
+        
+        // Close the loading message
+        Swal.close();
+
+        // Call startProcessing function after all files are uploaded
+        startProcessing(clientName); 
+    });
+
+    function startProcessing(clientName) {
+            // Show "Please wait" message
+            Swal.fire({
+                title: 'Please wait...',
+                html: 'Processing...',
+                allowOutsideClick: false,
+                onBeforeOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: '/start_processing',
+                type: 'POST',
+                data: JSON.stringify({ 'client_name': clientName }),
+                contentType: 'application/json;charset=UTF-8',
+                success: function(response) {
+                    if(response.status === 'success') {
+                        // Close the loading message
+                        Swal.close();
+                        // Show success message
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Processing started successfully!',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                        
+                        // Redirect to the download URL
+                        window.location.href = response.download_url;
+                        // Delay the page reload
+                        setTimeout(function() {
+                            // Reload the page to update the view with the new database entry
+                            window.location.reload(true);
+                        }, 1000); // Adjust the delay as needed, 1000ms = 1 second
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Processing error:", error);
+                    // Close the loading message
+                    Swal.close();
+                    // Show error message
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: 'An error occurred while processing.'
+                    });
+                }
+            });
+        }
+
+        // Event delegation for handling dynamically added elements
+        $(document).on('click', '.delete-record-button', function () {
+            var id = $(this).data('id'); // Get the id value from the data-id attribute
+            if (confirm('Are you sure you want to delete this record?')) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/delete-record-loler',
+                    data: { id: id },
+                    success: function (response) {
+                        if (response.success) {
+                            $('.alert-success').html('<strong>Success!</strong> ' + response.message).show(); // Update success alert box content and show it
+                            $('.alert-warning').hide(); // Hide error alert box
+                            location.reload(true); // Reload the page to update the table
+                        } else {
+                            $('.alert-warning').html('<strong>Attention!</strong> ' + response.message).show(); // Update error alert box content and show it
+                            $('.alert-success').hide(); // Hide success alert box
+                        }
+                    },
+                    error: function (xhr, textStatus, errorThrown) {
+                        console.error('Error deleting asset:', xhr);
+                    }
+                });
+            }
+        });
+    });
+</script>
+</html>
