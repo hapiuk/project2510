@@ -41,7 +41,10 @@ def count_severity_levels(get_db):
         cursor.execute("SELECT COUNT(*) FROM aecom_inspection WHERE priority = 'Intolerable'")
         intolerable_count = cursor.fetchone()[0]
 
-        return moderate_count, substantial_count, intolerable_count
+        cursor.execute("SELECT COUNT(*) FROM aecom_inspection")
+        defect_count = cursor.fetchone()[0]
+
+        return moderate_count, substantial_count, intolerable_count, defect_count
     finally:
         conn.close()
 
@@ -111,6 +114,7 @@ def aecom():
 
     aecom_reports = conn.execute('SELECT * FROM aecom_reports ORDER BY id').fetchall()
     aecom_sites = conn.execute('SELECT * FROM aecom_sites ORDER BY id').fetchall()
+    aecom_defects = conn.execute('SELECT * FROM aecom_inspection ORDER BY id').fetchall()
 
     # Calculate total reports 
     unique_site_count = conn.execute('SELECT COUNT(DISTINCT inspection_ref) FROM aecom_reports').fetchone()[0]
@@ -128,13 +132,13 @@ def aecom():
         entity_to_site[entity] = site
 
     # Count occurrences of each severity level
-    moderate_count, substantial_count, intolerable_count = count_severity_levels(get_db)
+    moderate_count, substantial_count, intolerable_count, defect_count = count_severity_levels(get_db)
 
     print(f"Moderate Count: {moderate_count}")
 
     conn.close()
 
-    return render_template('aecom.html', aecom_reports=aecom_reports, aecom_sites=aecom_sites, unique_site_count=unique_site_count, entity_to_site=entity_to_site, total_invoice_value=total_invoice_value, moderate_count=moderate_count, substantial_count=substantial_count, intolerable_count=intolerable_count, average_process_time=average_processing_time)
+    return render_template('aecom.html', aecom_reports=aecom_reports, aecom_sites=aecom_sites, aecom_defects=aecom_defects, unique_site_count=unique_site_count, entity_to_site=entity_to_site, total_invoice_value=total_invoice_value, moderate_count=moderate_count, substantial_count=substantial_count, intolerable_count=intolerable_count, defect_count=defect_count, average_process_time=average_processing_time)
 
 
 def clear_input_folder(upload_folder):
