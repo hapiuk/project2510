@@ -10,16 +10,14 @@
                             <th>Asset ID</th>
                             <th>Asset Type</th>
                             <th>Serial Number</th>
-                            <th>Assigned To</th>
                         </tr>
                     </thead>
                     <!-- Display equipment details -->
-                    {% for detail in equipment_details %}
+                    {% for detail in eng_equipment %}
                     <tr onclick="showEquipmentDetails('{{ detail.asset_id }}')">
                         <td>{{ detail.asset_id }}</td>
                         <td>{{ detail.asset_type }}</td>
-                        <td>{{ detail.serial_number }}</td>
-                        <td>{{ detail.first_name }} {{ detail.second_name }}</td>
+                        <td>{{ detail.status }}</td>
                     </tr>
                     {% endfor %}
                     <tfoot>
@@ -27,7 +25,6 @@
                             <th>
                                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addequipment">Add Equipment</button>
                             </th>
-                            <th></th>
                             <th></th>
                             <th></th>
                         </tr>

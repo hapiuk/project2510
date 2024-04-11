@@ -162,6 +162,55 @@ def create_loler_defects_table():
     conn.commit()
     conn.close()
 
+def create_it_assets_table():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS equipment (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_id TEXT NOT NULL,
+            asset_type TEXT,
+            status TEXT,
+            owner INTEGER,
+            purchase_date DATE,
+            asset_value TEXT,
+            current_value TEXT,
+            warranty_start DATE,
+            warranty_end DATE,
+            warranty_provider TEXT,
+            asset_vendor TEXT,
+            serial_number TEXT,
+            imei_1 TEXT,
+            imei_2 TEXT,
+            mac_1 TEXT,
+            mac_2 TEXT,
+            FOREIGN KEY (owner) REFERENCES users(id)  -- Added foreign key constraint
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def create_engineer_assets_table():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS eng_equipment (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            asset_id TEXT NOT NULL,
+            owner INTEGER,
+            serial_number TEXT,
+            asset_type TEXT,
+            status TEXT,
+            calibration_date DATE,
+            calibration_expiry DATE,
+            calibration_status TEXT,
+            calibration_cert TEXT,
+            calibration_company TEXT,
+            calibration_standard TEXT,
+            FOREIGN KEY (owner) REFERENCES users(id)  -- Added foreign key constraint
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
 create_user_table()
 create_aecom_table()
 create_aecom_visit_table()
@@ -169,3 +218,5 @@ create_aecom_inspection_table()
 create_aecom_site_table()
 create_loler_inspections_table()
 create_loler_defects_table()
+create_it_assets_table()
+create_engineer_assets_table()

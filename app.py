@@ -17,6 +17,8 @@ from modules.database.database import db_blueprint, get_db
 from modules.aecom.aecom import aecom_blueprint, clear_input_folder, allowed_file
 from modules.auth.auth import auth_blueprint, add_default_user, User
 from modules.loler.loler import loler_blueprint
+from modules.equipment.equipment import equipment_blueprint
+from modules.engineer_assets.engineer_assets import engineer_assets_blueprint
 
 
 app = Flask(__name__)
@@ -40,6 +42,8 @@ app.register_blueprint(db_blueprint)
 app.register_blueprint(aecom_blueprint)
 app.register_blueprint(auth_blueprint)
 app.register_blueprint(loler_blueprint)
+app.register_blueprint(equipment_blueprint)
+app.register_blueprint(engineer_assets_blueprint)
 
 
 @app.route('/', methods=['GET'])

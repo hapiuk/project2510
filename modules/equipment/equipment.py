@@ -2,226 +2,175 @@ from flask import Blueprint, request, jsonify, render_template, flash, redirect,
 from flask_login import LoginManager, login_user, logout_user, login_required
 import sqlite3
 from datetime import datetime
-from modules.database.database import db_blueprint, get_db, get_all_clients
+from modules.database.database import db_blueprint, get_db
 
 equipment_blueprint = Blueprint('equipment_blueprint', __name__)
 
-
 ###################################################################################################################################### Equipment Functions
 
-@equipment_blueprint.route('/download-template', methods=['GET'])
-def download_template():
-    template_file = 'templates/equipment_template.csv'  # Path to your CSV template
-
-    # Set the content type to indicate it's a CSV file
-    return send_file(template_file, as_attachment=True, mimetype='text/csv')
-
-@equipment_blueprint.route('/upload-equipment', methods=['POST'])
-def upload_equipment():
-    if 'csv_file' in request.files:
-        try:
-            # Process the uploaded CSV file
-            equipment_data = process_equipment_csv(request.files['csv_file'])
-            
-            # Insert equipment data into the database
-            insert_equipment_from_csv(equipment_data)
-            
-            flash('CSV file uploaded and equipment details added successfully', 'success')
-        except Exception as e:
-            flash(f'Error processing CSV file: {str(e)}', 'error')
-
-    return redirect('/equipment')
-
-def insert_equipment_from_csv(equipment_data):
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    for equipment in equipment_data:
-        cursor.execute('''
-            INSERT INTO equipment (equipment_number, client_account_number, equipment_type, equipment_sub_type, serial_number)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (equipment['equipment_number'], equipment['client_account_number'], equipment['equipment_type'], equipment['equipment_sub_type'], equipment['serial_number']))
-    
-    conn.commit()
-    conn.close()
-
-def process_equipment_csv(file):
-    equipment_data = []
-
-    csv_file = TextIOWrapper(file, encoding='utf-8')
-    csv_reader = csv.DictReader(csv_file)
-
-    for row in csv_reader:
-        print("CSV Row:", row)
-        # Check if 'client_account_number' is in the CSV row (without the BOM character)
-        if 'client_account_number' not in row:
-            raise ValueError("Missing 'client_account_number' in CSV row")
-
-        # Extract Info (use 'client_account_number' as the column name)
-        client_account_number = row.get('client_account_number', 'Unknown')
-        equipment_number = row.get('equipment_number', 'Unknown')
-        equipment_type = row.get('equipment_type', 'Unknown')
-        equipment_sub_type = row.get('equipment_sub_type', 'Unknown')
-        serial_number = row.get('serial_number', 'Unknown')
-        client_asset_id = row.get('client_asset_id', 'Unknown')
-        sub_location = row.get('sub_location', 'Unknown')
-        safe_working_load = row.get('safe_working_load', 'Unknown')
-        inspection_frequency = row.get('inspection_frequency', 'Unknown')
-        year_of_manufacture = row.get('year_of_manufacture', 'Unknown')
-
-        equipment_data.append({
-            'equipment_number': equipment_number,
-            'client_account_number': client_account_number,
-            'equipment_type': equipment_type,
-            'equipment_sub_type': equipment_sub_type,
-            'serial_number': serial_number,
-            'client_asset_id': client_asset_id,
-            'sub_location': sub_location,
-            'safe_working_load': safe_working_load,
-            'inspection_frequency': inspection_frequency,
-            'year_of_manufacture': year_of_manufacture,
-        })
-
-
-    return equipment_data
-
-# Function to fetch equipment data
-def get_equipment_list():
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT equipment.*, clients.client_name
-        FROM equipment
-        INNER JOIN clients ON equipment.client_account_number = clients.account_number
-    ''')
-    equipment = cursor.fetchall()
-    conn.close()
-    return equipment
-
-# Function to fetch equipment details based on equipment_id
-def get_equipment_details(equipment_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM equipment WHERE id = ?', (equipment_id,))
-    equipment_details = cursor.fetchone()
-    conn.close()
-    return dict(equipment_details) if equipment_details else None
-
-def get_client_list():
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, client_name FROM clients')
-    clients = cursor.fetchall()
-    conn.close()
-    return clients
-
-# Function to insert equipment data
-def insert_equipment(equipment_number, client_account_number, equipment_type, equipment_sub_type, serial_number, client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO equipment (equipment_number, client_account_number, equipment_type, equipment_sub_type, '
-                   'serial_number, client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture) '
-                   'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                   (equipment_number, client_account_number, equipment_type, equipment_sub_type, serial_number, client_asset_id, sub_location,
-                    safe_working_load, inspection_frequency, year_of_manufacture))
-    conn.commit()
-    cursor.close()
-
-
-@equipment_blueprint.route('/update-equipment', methods=['POST'])
-
-def update_equipment():
-    if request.method == 'POST':
-        equipment_number = request.form.get('equipment_number')
-        client_account_number = request.form.get('client_account_number')
-        equipment_type = request.form.get('equipment_type')
-        equipment_sub_type = request.form.get('equipment_sub_type')
-        serial_number = request.form.get('serial_number')
-        client_asset_id = request.form.get('client_asset_id')
-        sub_location = request.form.get('sub_location')
-        safe_working_load = request.form.get('safe_working_load')
-        inspection_frequency = request.form.get('inspection_frequency')
-        year_of_manufacture = request.form.get('year_of_manufacture')
-
-        try:
-            conn = get_db()
-            sql_query = '''
-                UPDATE equipment
-                SET equipment_type=?, equipment_sub_type=?, serial_number=?, client_asset_id=?, 
-                sub_location=?, safe_working_load=?, inspection_frequency=?, year_of_manufacture=?
-                WHERE equipment_number=?
-            '''
-            conn.execute(sql_query, (equipment_type, equipment_sub_type, serial_number, client_asset_id, sub_location,
-                safe_working_load, inspection_frequency, year_of_manufacture, equipment_number))
-            conn.commit()
-            conn.close()
-
-            success_message = "Equipment updated successfully."
-            session['success_message'] = success_message
-        except Exception as e:
-            error_message = str(e)
-            session['error_message'] = error_message
-
-    return redirect('/equipment')
 
 @equipment_blueprint.route('/equipment')
 @login_required
 def equipment():
-    equipment = get_equipment_list()
-    clients = get_all_clients()
-    search_query = request.args.get('search', '', type=str)
+    
 
-    # Apply filtering based on search query
-    if search_query:
-        equipment = [item for item in equipment if search_query.lower() in str(item).lower()]
+    conn = get_db()
+    equipment_details = conn.execute('SELECT e.*, u.first_name, u.second_name FROM equipment e JOIN users u ON e.owner = u.id').fetchall()
+    users = conn.execute('SELECT id, first_name, second_name FROM users').fetchall()
+    conn.close()
 
-    return render_template(
-        'equipment.html',
-        equipment=equipment,
-        clients=clients,
-        search_query=search_query,
-        title='Equipment', 
-        buttonName='Add Equipment', 
-        buttonTarget='new-equipment-modal'
-    )
+    generated_id = generate_asset_id()
 
+    print(generated_id)
 
-@equipment_blueprint.route('/equipment/create', methods=['POST'])
-def create_equipment():
+    return render_template('equipment.html', title='Equipment', equipment_details=equipment_details, users=users, generated_id=generated_id)
+
+@equipment_blueprint.route('/addequipment', methods=['GET', 'POST'])
+def add_equipment():
     if request.method == 'POST':
+        asset_id = request.form['asset_id']
+        asset_type = request.form['asset_type']
+        status = request.form['status']
+        owner = request.form['owner']
+        purchase_date = request.form['purchase_date']
+        asset_value = request.form['asset_value']
+        current_value = request.form['current_value']
+        warranty_start = request.form['warranty_start']
+        warranty_end = request.form['warranty_end']
+        warranty_provider = request.form['warranty_provider']
+        asset_vendor = request.form['asset_vendor']
+        serial_number = request.form['serial_number']
+        imei = request.form['imei']
+        mac = request.form['mac']
 
-        # Process the uploaded CSV file and obtain equipment data
-        equipment_data = process_equipment_csv(request.files['csv_file'])
+        conn = get_db()
+        cursor = conn.cursor()
 
-        # Insert equipment data into the database, including client_account_number from CSV
-        for equipment in equipment_data:
-            equipment_number = equipment['equipment_number']
-            client_account_number = equipment['client_account_number']
-            equipment_type = equipment['equipment_type']
-            equipment_sub_type = equipment['equipment_sub_type']
-            serial_number = equipment['serial_number']
-            client_asset_id = equipment['client_asset_id']
-            sub_location = equipment['sub_location']
-            safe_working_load = equipment['safe_working_load']
-            inspection_frequency = equipment['inspection_frequency']
-            year_of_manufacture = equipment['year_of_manufacture']
-            date_stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # Insert equipment data into the database
+        cursor.execute('''
+            INSERT INTO equipment (asset_id, asset_type, status, owner, purchase_date, asset_value, current_value, warranty_start, warranty_end, warranty_provider, asset_vendor, serial_number, imei_1, mac_1)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (asset_id, asset_type, status, owner, purchase_date, asset_value, current_value, warranty_start, warranty_end, warranty_provider, asset_vendor, serial_number, imei, mac))
 
-            insert_equipment(equipment_number, client_account_number, equipment_type, equipment_sub_type, serial_number,
-                             client_asset_id, sub_location, safe_working_load, inspection_frequency, year_of_manufacture, date_stamp)
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for('equipment_blueprint.equipment'))
 
 
-        response_data = {"message": "Equipment added successfully."}
-        return jsonify(response_data)
-        return redirect('/equipment')
+@equipment_blueprint.route('/equipment/<asset_id>')
+@login_required
+def get_equipment_details(asset_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT e.*, u.first_name, u.second_name
+        FROM equipment e
+        JOIN users u ON e.owner = u.id
+        WHERE e.asset_id = ?
+    ''', (asset_id,))
+    row = cursor.fetchone()
+
+    if row:
+        column_names = [description[0] for description in cursor.description]
+        equipment_details = dict(zip(column_names, row))
+        print("Equipment details:", equipment_details)  # Print the fetched equipment details
+        
+        # Fetch owner's first and last name from the users table
+        owner_id = equipment_details['owner']
+        owner_details = conn.execute('SELECT first_name, second_name FROM users WHERE id = ?', (owner_id,)).fetchone()
+        owner_name = f"{owner_details['first_name']} {owner_details['second_name']}" if owner_details else None
+
+        # Extract IMEI_1 and MAC_1 from the equipment details
+        imei_1 = equipment_details.get('imei_1', '')
+        mac_1 = equipment_details.get('mac_1', '')
+
+        # Create a dictionary containing the equipment details
+        equipment_dict = {
+            'asset_id': equipment_details['asset_id'],
+            'asset_type': equipment_details['asset_type'],
+            'status': equipment_details['status'],
+            'owner': owner_name,
+            'purchase_date': equipment_details['purchase_date'],
+            'asset_value': equipment_details['asset_value'],
+            'current_value': equipment_details['current_value'],
+            'warranty_start': equipment_details['warranty_start'],
+            'warranty_end': equipment_details['warranty_end'],
+            'warranty_provider': equipment_details['warranty_provider'],
+            'asset_vendor': equipment_details['asset_vendor'],
+            'serial_number': equipment_details['serial_number'],
+            'imei_1': imei_1,
+            'mac_1': mac_1
+        }
+        return jsonify(equipment_dict)
+    else:
+        # If the asset ID does not exist, return an error message
+        return jsonify({'error': 'Equipment not found'})
+    conn.close()
 
 
-@equipment_blueprint.route('/equipment/search', methods=['GET'])
-def equipment_search():
-    search_query = request.args.get('search', '')
-    equipment = get_equipment_list()
+def generate_asset_id():
+    conn = get_db()
+    count = conn.execute('SELECT COUNT(*) FROM equipment').fetchone()[0]  # Count items in equipment table
+    conn.close()
 
-    if search_query:
-        equipment = [item for item in equipment if search_query.lower() in str(item).lower()]
+    id_prefix = 'ISI'
+    date_stamp = datetime.now().strftime('%Y%m%d')
+    generated_id = f"{id_prefix}-{count + 1}-{date_stamp}"
+    
+    return generated_id
 
-    return jsonify(equipment)
+@equipment_blueprint.route('/delete_equipment', methods=['POST'])
+def delete_equipment():
+    if request.method == 'POST':
+        # Get the asset ID from the request data
+        asset_id = request.form['asset_id']
+
+        # Perform the deletion operation (assuming you have a database table named 'equipment')
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM equipment WHERE asset_id = ?', (asset_id,))
+        conn.commit()
+        conn.close()
+
+        # Return a success message
+        return jsonify({'message': 'Asset deleted successfully'})
+
+    # If the request method is not POST, return an error message
+    return jsonify({'error': 'Method not allowed'})
+
+@equipment_blueprint.route('/update_equipment', methods=['POST'])
+def update_equipment():
+    if request.method == 'POST':
+        # Extract the updated equipment details from the request
+        asset_id = request.form.get('asset_id')
+        asset_type = request.form.get('asset_type')
+        status = request.form.get('status')
+        owner = request.form.get('owner')
+        purchase_date = request.form.get('purchase_date')
+        asset_value = request.form.get('asset_value')
+        current_value = request.form.get('current_value')
+        warranty_start = request.form.get('warranty_start')
+        warranty_end = request.form.get('warranty_end')
+        warranty_provider = request.form.get('warranty_provider')
+        asset_vendor = request.form.get('asset_vendor')
+        serial_number = request.form.get('serial_number')
+        imei_1 = request.form.get('imei')
+        mac_1 = request.form.get('mac')
+
+        # Update the equipment details in the database (assuming you have a table named 'equipment')
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE equipment
+            SET asset_type=?, status=?, owner=?, purchase_date=?, asset_value=?, current_value=?, warranty_start=?, warranty_end=?, warranty_provider=?, asset_vendor=?, serial_number=?, imei_1=?, mac_1=?
+            WHERE asset_id=?
+        """, (asset_type, status, owner, purchase_date, asset_value, current_value, warranty_start, warranty_end, warranty_provider, asset_vendor, serial_number, imei_1, mac_1, asset_id))
+        conn.commit()
+        conn.close()
+
+        # Return a success message
+        return jsonify({'message': 'Equipment details updated successfully'})
+
+    # If the request method is not POST, return an error message
+    return jsonify({'error': 'Method not allowed'})

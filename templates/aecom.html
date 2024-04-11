@@ -2,21 +2,6 @@
 <div class="container-fluid" style="margin-top:10px;">
     <div class="row">
         <div class="col-8">
-
-            {% if success_message %}
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-              <strong>Success!</strong> {{ success_message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endif %}
-
-            {% if error_message %}
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-              <strong>Attention!</strong> {{ error_message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endif %}
-
             <!-- Clients Page Contents-->
             <div class="container-fluid">
                 <table class="table table-striped table-hover" style="cursor: pointer;" id="aecom-table">
