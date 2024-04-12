@@ -192,6 +192,7 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
     earliest_next_inspection_date = "N/A"
     report_date = None
     report_count = 0
+    skipped_documents = []  # List to store skipped documents
 
     # Generate a unique filename based on client_name
     unique_filename = generate_unique_filename(client_name)
@@ -229,14 +230,19 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
                     # Extract report date and next inspection date
                     report_date_match = re.search(r"Report Date\s*([^\n]*)", text)
                     report_date = report_date_match.group(1).strip() if report_date_match else None
-                    
+
                     next_inspection_date_match = re.search(r"Next Inspection Date\s*([^\n]*)", text)
                     next_inspection_date = next_inspection_date_match.group(1).strip() if next_inspection_date_match else None
 
+                    if next_inspection_date is None or next_inspection_date == '' or next_inspection_date == 'Surveyor':
+                        # Skip this document
+                        skipped_documents.append((filename, next_inspection_date))
+                        continue
+
                     # Write the row to CSV
-                    csvwriter.writerow([client_name] + [metadata_dict.get(key, "") for key in keys_to_extract] + [report_date, next_inspection_date])
-                    
-                    print("CSV row written:", [client_name] + [metadata_dict.get(key, "") for key in keys_to_extract] + [report_date, next_inspection_date])  # Debugging print statement
+                    csv_row = [client_name] + [metadata_dict.get(key, "") for key in keys_to_extract] + [report_date, next_inspection_date]
+                    csvwriter.writerow(csv_row)
+                    print("CSV row written:", csv_row)  # Print CSV row written to console
 
                     # Convert report_date and next_inspection_date to datetime objects if they are not None
                     if report_date:
@@ -254,6 +260,11 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
 
     # Insert data into the "loler_inspections" table
     db_insert_loler_inspection(client_name, report_date, earliest_next_inspection_date, report_count, unique_filename, get_db, logged_user)
+
+    # Print skipped documents to the console
+    print("Skipped Documents:")
+    for document, date in skipped_documents:
+        print(f"{document}: Next Inspection Date - {date}")
 
     print("Process completed for", client_name)  # Debugging print statement
 

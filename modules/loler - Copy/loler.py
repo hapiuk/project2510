@@ -227,11 +227,33 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
                         metadata_dict[key] = key_match.group(1).strip() if key_match else ""
 
                     # Extract report date and next inspection date
+                    # Extract report date and next inspection date
                     report_date_match = re.search(r"Report Date\s*([^\n]*)", text)
                     report_date = report_date_match.group(1).strip() if report_date_match else None
-                    
+
                     next_inspection_date_match = re.search(r"Next Inspection Date\s*([^\n]*)", text)
                     next_inspection_date = next_inspection_date_match.group(1).strip() if next_inspection_date_match else None
+
+                    # Debug statement: Print the extracted next inspection date
+                    print("Extracted next inspection date:", next_inspection_date)
+
+                    # Check if next_inspection_date is not "Surveyor" and is not None
+                    if next_inspection_date != "Surveyor" and next_inspection_date is not None:
+                        # Write the row to CSV
+                        csvwriter.writerow([client_name] + [metadata_dict.get(key, "") for key in keys_to_extract] + [report_date, next_inspection_date])
+                        print("CSV row written.")
+                    elif next_inspection_date is None:
+                        # Debug statement: Print a message indicating the document is being skipped
+                        print("Skipping document due to missing next inspection date.")
+                        # Add filename of the skipped document to the list
+                        skipped_documents.append(pdf_path)
+
+                    # After processing all documents, print the list of skipped documents
+                    print("Skipped documents:")
+                    for doc in skipped_documents:
+                        print(doc)
+
+
 
                     # Write the row to CSV
                     csvwriter.writerow([client_name] + [metadata_dict.get(key, "") for key in keys_to_extract] + [report_date, next_inspection_date])
