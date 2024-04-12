@@ -1,21 +1,39 @@
-from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for
+from flask import Blueprint, request, jsonify, render_template, redirect, url_for
 from flask_login import login_required
+import sqlite3
 from datetime import datetime
-from modules.database.database import db_blueprint, get_db
+from modules.database.database import get_db
 
-# Create a blueprint for engineer assets
 engineer_assets_blueprint = Blueprint('engineer_assets_blueprint', __name__)
 
-# Define routes for engineer assets CRUD operations
+
+
+
 @engineer_assets_blueprint.route('/engineer_assets')
 @login_required
 def engineer_assets():
     conn = get_db()
-    engineer_assets = conn.execute('SELECT * FROM eng_equipment').fetchall()
-    conn.close()
-    return render_template('engineer_assets.html', title='Engineer Assets', engineer_assets=engineer_assets)
+    # Set row_factory to return dictionaries
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
 
-@engineer_assets_blueprint.route('/add_engineer_asset', methods=['POST'])
+    cursor.execute('''
+        SELECT e.*, u.first_name, u.second_name 
+        FROM eng_equipment e 
+        JOIN users u ON e.owner = u.id
+    ''')
+    engineer_assets = cursor.fetchall()
+
+    users = conn.execute('SELECT id, first_name, second_name FROM users').fetchall()
+    conn.close()
+
+    generated_id = generate_asset_id()
+
+    print("Engineer Assets:", engineer_assets)  # Debug statement
+
+    return render_template('engineer_assets.html', title='Engineer Assets', engineer_assets=engineer_assets, users=users, generated_id=generated_id)
+
+@engineer_assets_blueprint.route('/add_engineer_equipment', methods=['POST'])
 def add_engineer_asset():
     if request.method == 'POST':
         asset_id = request.form['asset_id']
@@ -43,33 +61,61 @@ def add_engineer_asset():
 
         return redirect(url_for('engineer_assets_blueprint.engineer_assets'))
 
-@engineer_assets_blueprint.route('/update_engineer_asset', methods=['POST'])
-def update_engineer_asset():
-    if request.method == 'POST':
-        asset_id = request.form.get('asset_id')
-        owner = request.form.get('owner')
-        serial_number = request.form.get('serial_number')
-        asset_type = request.form.get('asset_type')
-        status = request.form.get('status')
-        calibration_date = request.form.get('calibration_date')
-        calibration_expiry = request.form.get('calibration_expiry')
-        calibration_status = request.form.get('calibration_status')
-        calibration_cert = request.form.get('calibration_cert')
-        calibration_company = request.form.get('calibration_company')
-        calibration_standard = request.form.get('calibration_standard')
+@engineer_assets_blueprint.route('/get_engineer_asset_details/<id>')
+@login_required
+def get_engineer_asset_details(id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT e.*, u.first_name, u.second_name
+        FROM eng_equipment e
+        JOIN users u ON e.owner = u.id
+        WHERE e.id = ?
+    ''', (id,))
+    row = cursor.fetchone()
 
-        conn = get_db()
-        cursor = conn.cursor()
+    if row:
+        column_names = [description[0] for description in cursor.description]
+        asset_details = dict(zip(column_names, row))
+        print("Engineer asset details:", asset_details)  # Print the fetched engineer asset details
+        
+        # Fetch owner's first and last name from the users table
+        owner_id = asset_details['owner']
+        owner_details = conn.execute('SELECT first_name, second_name FROM users WHERE id = ?', (owner_id,)).fetchone()
+        owner_name = f"{owner_details['first_name']} {owner_details['second_name']}" if owner_details else None
 
-        cursor.execute("""
-            UPDATE eng_equipment
-            SET owner=?, serial_number=?, asset_type=?, status=?, calibration_date=?, calibration_expiry=?, calibration_status=?, calibration_cert=?, calibration_company=?, calibration_standard=?
-            WHERE asset_id=?
-        """, (owner, serial_number, asset_type, status, calibration_date, calibration_expiry, calibration_status, calibration_cert, calibration_company, calibration_standard, asset_id))
-        conn.commit()
-        conn.close()
+        # Create a dictionary containing the engineer asset details
+        engineer_asset_dict = {
+            'id': asset_details['id'],
+            'asset_id': asset_details['asset_id'],
+            'owner': owner_name,
+            'serial_number': asset_details['serial_number'],
+            'asset_type': asset_details['asset_type'],
+            'status': asset_details['status'],
+            'calibration_date': asset_details['calibration_date'],
+            'calibration_expiry': asset_details['calibration_expiry'],
+            'calibration_status': asset_details['calibration_status'],
+            'calibration_cert': asset_details['calibration_cert'],
+            'calibration_company': asset_details['calibration_company'],
+            'calibration_standard': asset_details['calibration_standard']
+        }
+        return jsonify(engineer_asset_dict)
+    else:
+        # If the id does not exist, return an error message
+        return jsonify({'error': 'Engineer Asset not found'})
+    conn.close()
 
-        return jsonify({'message': 'Engineer asset details updated successfully'})
+
+def generate_asset_id():
+    conn = get_db()
+    count = conn.execute('SELECT COUNT(*) FROM eng_equipment').fetchone()[0]  # Count items in eng_equipment table
+    conn.close()
+
+    id_prefix = 'ENG'
+    date_stamp = datetime.now().strftime('%Y%m%d')
+    generated_id = f"{id_prefix}-{count + 1}-{date_stamp}"
+    
+    return generated_id
 
 @engineer_assets_blueprint.route('/delete_engineer_asset', methods=['POST'])
 def delete_engineer_asset():
@@ -82,31 +128,40 @@ def delete_engineer_asset():
         conn.commit()
         conn.close()
 
-        return jsonify({'message': 'Engineer asset deleted successfully'})
+        return jsonify({'message': 'Asset deleted successfully'})
 
-@engineer_assets_blueprint.route('/engineer_assets/<asset_id>')
-@login_required
-def get_engineer_asset_details(asset_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM eng_equipment WHERE asset_id = ?', (asset_id,))
-    row = cursor.fetchone()
+    return jsonify({'error': 'Method not allowed'})
 
-    if row:
-        column_names = [description[0] for description in cursor.description]
-        engineer_asset_details = dict(zip(column_names, row))
-        return jsonify(engineer_asset_details)
-    else:
-        return jsonify({'error': 'Engineer asset not found'})
 
-@engineer_assets_blueprint.route('/generate_asset_id')
-def generate_asset_id():
-    conn = get_db()
-    count = conn.execute('SELECT COUNT(*) FROM eng_equipment').fetchone()[0]
-    conn.close()
+@engineer_assets_blueprint.route('/update_engineer_asset', methods=['POST'])
+def update_engineer_asset():
+    if request.method == 'POST':
+        asset_id = request.form['asset_id']
+        owner = request.form['owner']
+        serial_number = request.form['serial_number']
+        asset_type = request.form['asset_type']
+        status = request.form['status']
+        calibration_date = request.form['calibration_date']
+        calibration_expiry = request.form['calibration_expiry']
+        calibration_status = request.form['calibration_status']
+        calibration_cert = request.form['calibration_cert']
+        calibration_company = request.form['calibration_company']
+        calibration_standard = request.form['calibration_standard']
 
-    id_prefix = 'ENG'
-    date_stamp = datetime.now().strftime('%Y%m%d')
-    generated_id = f"{id_prefix}-{count + 1}-{date_stamp}"
-    
-    return jsonify({'asset_id': generated_id})
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute('''
+            UPDATE eng_equipment
+            SET owner=?, serial_number=?, asset_type=?, status=?, calibration_date=?, calibration_expiry=?, calibration_status=?, calibration_cert=?, calibration_company=?, calibration_standard=?
+            WHERE asset_id=?
+        ''', (owner, serial_number, asset_type, status, calibration_date, calibration_expiry, calibration_status, calibration_cert, calibration_company, calibration_standard, asset_id))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({'message': 'Asset updated successfully'})
+
+    return jsonify({'error': 'Method not allowed'})
+
+
+
