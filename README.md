@@ -1,5 +1,5 @@
 # project2510
-Repurposed Prject. This is now a multi-pupose intraweb portal application
+Repurposed Project. This is now a multi-pupose intraweb portal application
 
 ## Table of Contents
 
