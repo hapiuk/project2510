@@ -124,7 +124,31 @@
                   </div>
                   <div class="form-floating mb-3">
                       <input class="form-control" type="text" id="client_name" name="client_name" required>
-                      <label for="client_name" class="form-label">Client Name:</label>
+                      <label for="client_name" class="form-label">Client Name (Required):</label>
+                  </div>
+                  <div class="form-floating mb-3">
+                      <input class="form-control" type="text" id="job_number" name="job_number" required>
+                      <label for="job_number" class="form-label">Job Number (Required):</label>
+                  </div>
+                  <div class="form-floating mb-3">
+                      <input class="form-control" type="text" id="client_address_1" name="client_address_1">
+                      <label for="client_address_1" class="form-label">Client Address 1:</label>
+                  </div>
+                  <div class="form-floating mb-3">
+                      <input class="form-control" type="text" id="client_address_2" name="client_address_2">
+                      <label for="client_address_2" class="form-label">Client Address 2:</label>
+                  </div>
+                  <div class="form-floating mb-3">
+                      <input class="form-control" type="text" id="client_postcode" name="client_postcode">
+                      <label for="client_postcode" class="form-label">Client Postcode:</label>
+                  </div>
+                  <div class="form-floating mb-3">
+                      <input class="form-control" type="text" id="client_contact" name="client_contact">
+                      <label for="client_contact" class="form-label">Client Contact Name:</label>
+                  </div>
+                  <div class="form-floating mb-3">
+                      <input class="form-control" type="text" id="client_contact_no" name="client_contact_no">
+                      <label for="client_contact_no" class="form-label">Client Contact No:</label>
                   </div>
                   <button type="button" id="start-upload" class="btn btn-primary" style="width:100%;">Process</button>
           </div>
@@ -133,6 +157,7 @@
       </div>
   </div>
 </div>
+
 
 <div class="modal fade" id="viewdefects" tabindex="-1" style="display: none;" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
@@ -242,21 +267,40 @@ $(document).ready(function () {
 
     $('#start-upload').click(function(){
         var clientName = $('#client_name').val(); // Capture client name when the process starts
-        if(clientName) {
+        var jobNumber = $('#job_number').val();
+        var clientAddress1 = $('#client_address_1').val();
+        var clientAddress2 = $('#client_address_2').val();
+        var clientPostcode = $('#client_postcode').val();
+        var clientContact = $('#client_contact').val();
+        var clientContactNo = $('#client_contact_no').val();
+
+        if(clientName && jobNumber) {
             // Show "Please wait" message
             Swal.fire({
                 title: 'Please wait...',
                 html: 'Uploading files...',
                 allowOutsideClick: false,
-                onBeforeOpen: () => {
+                didOpen: () => {
                     Swal.showLoading();
+                },
+                customClass: {
+                    popup: 'swal2-dark'
                 }
             });
 
-            r.opts.query.client_name = clientName; // Include client name in query
+            // Include additional client info in the query
+            r.opts.query = {
+                client_name: clientName,
+                job_number: jobNumber,
+                client_address_1: clientAddress1,
+                client_address_2: clientAddress2,
+                client_postcode: clientPostcode,
+                client_contact: clientContact,
+                client_contact_no: clientContactNo
+            };
             r.upload();
         } else {
-            alert('Client name is required.');
+            alert('Client Name and Job Number are required.');
         }
     });
 
@@ -265,29 +309,46 @@ $(document).ready(function () {
         // All files have been uploaded
         console.log("All files have been uploaded successfully.");
         var clientName = $('#client_name').val();
+        var jobNumber = $('#job_number').val();
+        var clientAddress1 = $('#client_address_1').val();
+        var clientAddress2 = $('#client_address_2').val();
+        var clientPostcode = $('#client_postcode').val();
+        var clientContact = $('#client_contact').val();
+        var clientContactNo = $('#client_contact_no').val();
         
         // Close the loading message
         Swal.close();
 
         // Call startProcessing function after all files are uploaded
-        startProcessing(clientName); 
+        startProcessing(clientName, jobNumber, clientAddress1, clientAddress2, clientPostcode, clientContact, clientContactNo); 
     });
 
-    function startProcessing(clientName) {
+    function startProcessing(clientName, jobNumber, clientAddress1, clientAddress2, clientPostcode, clientContact, clientContactNo) {
         // Show "Please wait" message
         Swal.fire({
             title: 'Please wait...',
             html: 'Processing...',
             allowOutsideClick: false,
-            onBeforeOpen: () => {
+            didOpen: () => {
                 Swal.showLoading();
+            },
+            customClass: {
+                popup: 'swal2-dark'
             }
         });
 
         $.ajax({
             url: '/start_processing',
             type: 'POST',
-            data: JSON.stringify({ 'client_name': clientName }),
+            data: JSON.stringify({
+                client_name: clientName,
+                job_number: jobNumber,
+                client_address_1: clientAddress1,
+                client_address_2: clientAddress2,
+                client_postcode: clientPostcode,
+                client_contact: clientContact,
+                client_contact_no: clientContactNo
+            }),
             contentType: 'application/json;charset=UTF-8',
             success: function(response) {
                 if(response.status === 'success') {
@@ -298,7 +359,10 @@ $(document).ready(function () {
                         icon: 'success',
                         title: 'Processing started successfully!',
                         showConfirmButton: false,
-                        timer: 1500
+                        timer: 1500,
+                        customClass: {
+                            popup: 'swal2-dark'
+                        }
                     });
                     
                     // Redirect to the download URL
@@ -320,7 +384,10 @@ $(document).ready(function () {
                 Swal.fire({
                     icon: 'error',
                     title: 'Oops...',
-                    text: 'An error occurred while processing.'
+                    text: 'An error occurred while processing.',
+                    customClass: {
+                        popup: 'swal2-dark'
+                    }
                 });
             }
         });

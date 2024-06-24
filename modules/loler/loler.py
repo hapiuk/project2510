@@ -114,19 +114,24 @@ def upload_chunk():
 def start_processing():
     data = request.get_json()
     client_name = data.get('client_name')
+    job_number = data.get('job_number')
+    client_address_1 = data.get('client_address_1', '')
+    client_address_2 = data.get('client_address_2', '')
+    client_postcode = data.get('client_postcode', '')
+    client_contact = data.get('client_contact', '')
+    client_contact_no = data.get('client_contact_no', '')
 
-    if not client_name:
-        return jsonify({'status': 'error', 'message': 'Client name is missing'}), 400
+    if not client_name or not job_number:
+        return jsonify({'status': 'error', 'message': 'Client name and Job number are required'}), 400
 
     try:
         logger.debug("Starting processing for client: %s", client_name)
-        xlsx_file_path = process_loler_pdfs(UPLOAD_FOLDER, OUTPUT_FOLDER, client_name, get_db)
+        xlsx_file_path = process_loler_pdfs(UPLOAD_FOLDER, OUTPUT_FOLDER, client_name, client_address_1, client_address_2, client_postcode, job_number, client_contact_no, client_contact, get_db)
         filename = os.path.basename(xlsx_file_path)
 
         clear_input_folder(UPLOAD_FOLDER)
         clear_input_folder(TEMP_CHUNK_FOLDER)
         
-        # Ensure the correct blueprint name is used here
         download_url = url_for('loler_blueprint.download_file', filename=filename, _external=True)
         
         return jsonify({'status': 'success', 'download_url': download_url})
@@ -176,7 +181,7 @@ def generate_unique_filename(client_name):
     filename = f"{client_name}_{timestamp}.xlsx"
     return filename
 
-def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
+def process_loler_pdfs(input_folder, output_folder, client_name, client_address_1, client_address_2, client_postcode, job_number, client_contact_no, client_contact, get_db):
     try:
         # Create the output directory if it doesn't exist
         os.makedirs(output_folder, exist_ok=True)
@@ -185,7 +190,7 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
         earliest_next_inspection_date = "N/A"
         report_date = None
         report_count = 0
-        skipped_documents = []  # List to store skipped documents
+        skipped_documents = []
 
         # Generate a unique filename based on client_name
         unique_filename = generate_unique_filename(client_name)
@@ -195,6 +200,15 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
         workbook = load_workbook(TEMPLATE_PATH)
         sheet = workbook.active
 
+        # Fill in the client details in the Excel template
+        sheet['A7'] = client_name
+        sheet['A8'] = client_address_1
+        sheet['A9'] = client_address_2
+        sheet['A10'] = client_postcode
+        sheet['D10'] = job_number
+        sheet['D11'] = client_contact_no
+        sheet['D12'] = client_contact
+
         # Write headers to the Excel sheet
         headers = ['Equipment Type', 'ISI Number', 'Serial Number', 'DOM', 'SWL',
                    'Client Ref', 'Location', 'Report ID', 'A Defect', 'B Defect', 'C Defect', 'D Defect',
@@ -203,7 +217,8 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
             sheet.cell(row=14, column=col_num, value=header)
 
         start_row = 15  # Starting row for data input
-        initial_start_row = start_row
+
+        logged_user = f"{current_user.first_name} {current_user.second_name}"
 
         for filename in os.listdir(input_folder):
             if filename.endswith(".pdf"):
@@ -255,7 +270,6 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
                     if earliest_next_inspection_date == "N/A" or (next_inspection_date and next_inspection_date < earliest_next_inspection_date):
                         earliest_next_inspection_date = next_inspection_date or earliest_next_inspection_date
 
-                    logged_user = f"{current_user.first_name} {current_user.second_name}"
                     # Insert data into the "loler_defects" table
                     db_insert_loler_defects(client_name, metadata_dict, report_date, next_inspection_date, get_db, logged_user)
 
@@ -281,6 +295,7 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
     except Exception as e:
         logger.error("Error processing PDFs: %s", str(e), exc_info=True)
         raise
+
 
 def db_insert_loler_defects(client_name, metadata_dict, report_date, next_inspection_date, get_db, logged_user):
     try:
