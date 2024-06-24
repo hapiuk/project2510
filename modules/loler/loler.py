@@ -4,9 +4,11 @@ import shutil
 import os
 import re
 import pdfplumber
-import csv
+import openpyxl
+from openpyxl import load_workbook
+from openpyxl.worksheet.table import Table, TableStyleInfo
 from flask import Blueprint, request, jsonify, render_template, flash, redirect, url_for, session, send_from_directory
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from modules.database.database import db_blueprint, get_db
@@ -19,7 +21,11 @@ OUTPUT_FOLDER = './output'
 PROCESSED_FOLDER = './processed'
 TEMP_CHUNK_FOLDER = './temp_chunks'
 ALLOWED_EXTENSIONS = {'pdf'}
+TEMPLATE_PATH = './static/LOLER-ReportTemplate.xlsx'  # Update with the actual path to your template
 
+# Set up logging
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
 
 @loler_blueprint.route('/loler', methods=['GET', 'POST'])
 @login_required
@@ -51,8 +57,6 @@ def loler():
                            moderate_count=moderate_count, substantial_count=substantial_count, intolerable_count=intolerable_count,
                            average_processing_time=average_processing_time, defects=defects)
 
-
-
 @loler_blueprint.route('/delete-record-loler', methods=['POST'])
 def delete_record_loler():
     loler_report_id = request.form.get('id')
@@ -74,7 +78,6 @@ def delete_record_loler():
         return jsonify({'success': False, 'message': error_message}), 500
     finally:
         conn.close()
-
 
 @loler_blueprint.route('/upload_chunk', methods=['POST'])
 def upload_chunk():
@@ -116,8 +119,9 @@ def start_processing():
         return jsonify({'status': 'error', 'message': 'Client name is missing'}), 400
 
     try:
-        csv_file_path = process_loler_pdfs(UPLOAD_FOLDER, OUTPUT_FOLDER, client_name, get_db)
-        filename = os.path.basename(csv_file_path)
+        logger.debug("Starting processing for client: %s", client_name)
+        xlsx_file_path = process_loler_pdfs(UPLOAD_FOLDER, OUTPUT_FOLDER, client_name, get_db)
+        filename = os.path.basename(xlsx_file_path)
 
         clear_input_folder(UPLOAD_FOLDER)
         clear_input_folder(TEMP_CHUNK_FOLDER)
@@ -127,6 +131,7 @@ def start_processing():
         
         return jsonify({'status': 'success', 'download_url': download_url})
     except Exception as e:
+        logger.error("Error during processing: %s", str(e), exc_info=True)
         clear_input_folder(UPLOAD_FOLDER)
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
@@ -138,7 +143,6 @@ def download_file(filename):
     except Exception as e:
         print(f"Error downloading file: {e}")
         return jsonify({"error": "File not found or another error occurred"}), 404
-
 
 # Functions from pdfextract.py
 def merge_pdfs(pdf_files, output_path):
@@ -169,29 +173,37 @@ def clear_input_folder(upload_folder):
 # Generate a unique filename (from lolerextract.py)
 def generate_unique_filename(client_name):
     timestamp = datetime.now().strftime("%Y%m%d-%H")
-    filename = f"{client_name}_{timestamp}.csv"
+    filename = f"{client_name}_{timestamp}.xlsx"
     return filename
 
 def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
-    # Create the output directory if it doesn't exist
-    os.makedirs(output_folder, exist_ok=True)
+    try:
+        # Create the output directory if it doesn't exist
+        os.makedirs(output_folder, exist_ok=True)
 
-    # Variables to track report dates and count
-    earliest_next_inspection_date = "N/A"
-    report_date = None
-    report_count = 0
-    skipped_documents = []  # List to store skipped documents
+        # Variables to track report dates and count
+        earliest_next_inspection_date = "N/A"
+        report_date = None
+        report_count = 0
+        skipped_documents = []  # List to store skipped documents
 
-    # Generate a unique filename based on client_name
-    unique_filename = generate_unique_filename(client_name)
-    csv_output_file = os.path.join(output_folder, unique_filename)
+        # Generate a unique filename based on client_name
+        unique_filename = generate_unique_filename(client_name)
+        xlsx_output_file = os.path.join(output_folder, unique_filename)
 
-    with open(csv_output_file, 'w', newline='', encoding='utf-8') as csvfile:
-        csvwriter = csv.writer(csvfile)
-        # Write headers to the CSV
-        csvwriter.writerow(['Client Name', 'Equipment Type', 'ISI Number', 'Serial Number', 'DOM', 'SWL',
-                            'Client Ref', 'Location', 'Report ID', 'A Defect', 'B Defect', 'C Defect', 'D Defect',
-                            'Report Date', 'Next Inspection Date'])
+        # Load the Excel template
+        workbook = load_workbook(TEMPLATE_PATH)
+        sheet = workbook.active
+
+        # Write headers to the Excel sheet
+        headers = ['Equipment Type', 'ISI Number', 'Serial Number', 'DOM', 'SWL',
+                   'Client Ref', 'Location', 'Report ID', 'A Defect', 'B Defect', 'C Defect', 'D Defect',
+                   'Report Date', 'Next Inspection Date']
+        for col_num, header in enumerate(headers, start=1):
+            sheet.cell(row=14, column=col_num, value=header)
+
+        start_row = 15  # Starting row for data input
+        initial_start_row = start_row
 
         for filename in os.listdir(input_folder):
             if filename.endswith(".pdf"):
@@ -227,10 +239,11 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
                         skipped_documents.append((filename, next_inspection_date))
                         continue
 
-                    # Write the row to CSV
-                    csv_row = [client_name] + [metadata_dict.get(key, "") for key in keys_to_extract] + [report_date, next_inspection_date]
-                    csvwriter.writerow(csv_row)
-                    print("CSV row written:", csv_row)  # Print CSV row written to console
+                    # Write the row to the Excel sheet starting from row 15
+                    xlsx_row = [metadata_dict.get(key, "") for key in keys_to_extract] + [report_date, next_inspection_date]
+                    for col_num, value in enumerate(xlsx_row, start=1):
+                        sheet.cell(row=start_row, column=col_num, value=value)
+                    start_row += 1
 
                     # Convert report_date and next_inspection_date to datetime objects if they are not None
                     if report_date:
@@ -246,19 +259,28 @@ def process_loler_pdfs(input_folder, output_folder, client_name, get_db):
                     # Insert data into the "loler_defects" table
                     db_insert_loler_defects(client_name, metadata_dict, report_date, next_inspection_date, get_db, logged_user)
 
-    # Insert data into the "loler_inspections" table
-    db_insert_loler_inspection(client_name, report_date, earliest_next_inspection_date, report_count, unique_filename, get_db, logged_user)
+        # Define the table range
+        table_end_row = start_row - 1
+        table_ref = f"A14:N{table_end_row}"
 
-    # Print skipped documents to the console
-    print("Skipped Documents:")
-    for document, date in skipped_documents:
-        print(f"{document}: Next Inspection Date - {date}")
+        # Create the table
+        table = Table(displayName="LOLER_Table", ref=table_ref)
+        style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
+                               showLastColumn=False, showRowStripes=True, showColumnStripes=True)
+        table.tableStyleInfo = style
+        sheet.add_table(table)
 
-    print("Process completed for", client_name)  # Debugging print statement
+        # Save the populated Excel file
+        workbook.save(xlsx_output_file)
 
-    return csv_output_file
+        # Insert data into the "loler_inspections" table
+        db_insert_loler_inspection(client_name, report_date, earliest_next_inspection_date, report_count, unique_filename, get_db, logged_user)
 
+        return xlsx_output_file
 
+    except Exception as e:
+        logger.error("Error processing PDFs: %s", str(e), exc_info=True)
+        raise
 
 def db_insert_loler_defects(client_name, metadata_dict, report_date, next_inspection_date, get_db, logged_user):
     try:
@@ -287,12 +309,11 @@ def db_insert_loler_defects(client_name, metadata_dict, report_date, next_inspec
         ''', (client_name, metadata_dict.get('Equipment Type', ''), metadata_dict.get('ISI Number', ''), metadata_dict.get('Serial Number', ''), metadata_dict.get('date_of_manufacture', ''), metadata_dict.get('SWL', ''), metadata_dict.get('Client Ref', ''), metadata_dict.get('Location', ''), inspection_id, metadata_dict.get('A Defect', ''), metadata_dict.get('B Defect', ''), metadata_dict.get('C Defect', ''), metadata_dict.get('D Defect', ''), report_date_str, next_inspection_date_str, process_date, logged_user))
         
         conn.commit()
-        print("Data inserted into loler_defects")  # Debugging print statement
+        logger.debug("Data inserted into loler_defects")
     except Exception as e:
-        print(f"Database operation error: {e}")
+        logger.error("Database operation error: %s", str(e), exc_info=True)
     finally:
         conn.close()
-
 
 def db_insert_loler_inspection(client_name, report_date, next_inspection_date, report_count, unique_filename, get_db, logged_user):
     try:
@@ -313,9 +334,9 @@ def db_insert_loler_inspection(client_name, report_date, next_inspection_date, r
         ''', (client_name, report_date_str, next_inspection_date_str, file_name, report_count, logged_user, process_date))
         
         conn.commit()
-        print("Data inserted into loler_inspections")  # Debugging print statement
+        logger.debug("Data inserted into loler_inspections")
     except Exception as e:
-        print(f"Database operation error: {e}")
+        logger.error("Database operation error: %s", str(e), exc_info=True)
     finally:
         conn.close()
 
@@ -345,7 +366,7 @@ def calculate_average_processing_time(get_db):
 
         return average_time
     except Exception as e:
-        print(f"Error calculating average processing time: {str(e)}")
+        logger.error("Error calculating average processing time: %s", str(e), exc_info=True)
         return None
     finally:
         conn.close()
