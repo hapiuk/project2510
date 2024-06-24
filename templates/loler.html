@@ -37,7 +37,7 @@
                             <td>{{ report.next_inspection_date }}</td>
                             <td>{{ report.report_count }}</td>
                             <td>
-                                <a href="/download_file/{{ OUTPUT_FOLDER }}/{{ report.zipname }}" class="btn btn-primary btn-sm">Download</a>
+                                <a href="/download_file/{{ OUTPUT_FOLDER }}/{{ report.file_name }}" class="btn btn-primary btn-sm">Download</a>
                                 <button type="button" class="btn btn-danger btn-sm delete-record-button" data-id="{{ report.id }}">Delete Record</button>
                             </td>
                         </tr>

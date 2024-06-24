@@ -21,7 +21,6 @@ TEMP_CHUNK_FOLDER = './temp_chunks'
 ALLOWED_EXTENSIONS = {'pdf'}
 
 
-
 @loler_blueprint.route('/loler', methods=['GET', 'POST'])
 @login_required
 def loler():
@@ -131,9 +130,14 @@ def start_processing():
         clear_input_folder(UPLOAD_FOLDER)
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-@loler_blueprint.route('/download_file/<filename>')
+@loler_blueprint.route('/download/<filename>', methods=['GET'])
+@login_required
 def download_file(filename):
-    return send_from_directory(OUTPUT_FOLDER, filename, as_attachment=True)
+    try:
+        return send_from_directory(OUTPUT_FOLDER, filename, as_attachment=True)
+    except Exception as e:
+        print(f"Error downloading file: {e}")
+        return jsonify({"error": "File not found or another error occurred"}), 404
 
 
 # Functions from pdfextract.py
