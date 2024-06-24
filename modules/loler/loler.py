@@ -110,47 +110,31 @@ def upload_chunk():
 
 @loler_blueprint.route('/start_processing', methods=['POST'])
 def start_processing():
-    data = request.get_json()  # Get data as JSON
-    client_name = data.get('client_name')  # Access client_name from JSON data
-
-    print("Received client name:", client_name)  # Debugging: Print received client name
+    data = request.get_json()
+    client_name = data.get('client_name')
 
     if not client_name:
-        print("Error: Client name is missing")
         return jsonify({'status': 'error', 'message': 'Client name is missing'}), 400
 
     try:
-        print("Processing started for client:", client_name)
-
-        # Call your processing function and get the path to the generated file
         csv_file_path = process_loler_pdfs(UPLOAD_FOLDER, OUTPUT_FOLDER, client_name, get_db)
-
-        print("Processing completed successfully")
-        
-        # Extract filename from the path
         filename = os.path.basename(csv_file_path)
-        
-        # Ensure your function to clear the input folder is called correctly
+
         clear_input_folder(UPLOAD_FOLDER)
         clear_input_folder(TEMP_CHUNK_FOLDER)
         
-        # Generate URL for downloading the file. Make sure 'download_file' endpoint exists.
-        download_url = url_for('aecom_blueprint.download_file', filename=filename, _external=True)
+        # Ensure the correct blueprint name is used here
+        download_url = url_for('loler_blueprint.download_file', filename=filename, _external=True)
         
-        print("Download URL generated:", download_url)
-
         return jsonify({'status': 'success', 'download_url': download_url})
     except Exception as e:
-        # Clear input folder in case of error
         clear_input_folder(UPLOAD_FOLDER)
-        print("Error occurred during processing:", e)  # Debugging: Print the error message
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
 
 @loler_blueprint.route('/download_file/<filename>')
 def download_file(filename):
-    # Ensure OUTPUT_FOLDER is correctly set to the directory containing the generated CSV
     return send_from_directory(OUTPUT_FOLDER, filename, as_attachment=True)
+
 
 # Functions from pdfextract.py
 def merge_pdfs(pdf_files, output_path):
