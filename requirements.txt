@@ -3,3 +3,4 @@ flask_login==0.6.3
 pdfplumber==0.11.1
 PyPDF2==3.0.1
 Werkzeug==3.0.3
+openpyxl==3.1.4
